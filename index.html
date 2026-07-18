@@ -435,6 +435,11 @@
   var fmt=function(n){return new Intl.NumberFormat("pl-PL",{maximumFractionDigits:0}).format(n)+" zł"};
   var fmtD=function(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("pl-PL",{day:"numeric",month:"short",year:"2-digit"})};
   var num=function(s){var v=parseFloat(String(s).trim().replace(",",".").replace("−","-").replace(/\s/g,""));return isNaN(v)?0:v};
+  // data lokalna YYYY-MM-DD (toISOString daje UTC, więc w nocy pokazywałoby wczoraj)
+  var todayISO=function(){
+    var d=new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  };
 
   function lget(k,fb){try{return JSON.parse(localStorage.getItem(k))||fb}catch(e){return fb}}
   function lset(k,v){localStorage.setItem(k,JSON.stringify(v))}
@@ -562,7 +567,7 @@
     animNum($("home-osz"),to);
     $("home-ike-sub").textContent=ike.length?ike.length+" wpł.":"brak wpisów";
     $("home-osz-sub").textContent=osz.length?osz.length+" wpis.":"brak wpisów";
-    var ym=new Date().toISOString().slice(0,7);
+    var ym=todayISO().slice(0,7);
     var mSum=ike.concat(osz).reduce(function(s,e){return s+(e.date.slice(0,7)===ym?e.amount:0)},0);
     $("home-sub").textContent=(ti+to)>0
       ? (mSum!==0?"W tym miesiącu: "+(mSum>0?"+":"−")+fmt(Math.abs(mSum)):"Brak wpisów w tym miesiącu")
@@ -601,7 +606,7 @@
     $("amount").placeholder=cfg.def||"kwota";
     $("amount").value="";
     $("money-error").textContent="";
-    $("date").value=new Date().toISOString().slice(0,10);
+    $("date").value=todayISO();
 
     var total=data.reduce(function(s,e){return s+e.amount},0);
     animNum($("total"),total);
@@ -1069,7 +1074,7 @@
   // eksport: wszystkie klucze kap_* poza PIN-em i Face ID (te są przypisane do urządzenia)
   function bkMsg(t,ok){var m=$("bk-msg");m.textContent=t;m.style.color=ok?"#7fe08f":""}
   $("bk-export").onclick=function(){
-    var out={app:"moj-kapital",ver:1,date:new Date().toISOString(),data:{}};
+    var out={app:"moj-kapital",ver:1,date:todayISO(),data:{}};
     for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);
       if(k.indexOf("kap_")!==0||k==="kap_pin"||k==="kap_bio_id")continue;
@@ -1078,7 +1083,7 @@
     var blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
     var a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="moj-kapital-"+new Date().toISOString().slice(0,10)+".json";
+    a.download="moj-kapital-"+todayISO()+".json";
     document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);
     bkMsg("Kopia pobrana. Zapisz plik w bezpiecznym miejscu (np. iCloud/Dysk).",true);
