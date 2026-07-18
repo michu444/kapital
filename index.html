@@ -20,187 +20,257 @@
     padding:env(safe-area-inset-top) 18px 60px;
     max-width:480px; margin:0 auto;
   }
-  header{padding-top:28px}
-  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
-  .total{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:2px}
-  .sub{color:var(--dim);font-size:13px;margin-top:4px;min-height:18px}
 
-  .tabs{display:flex;gap:8px;margin-top:22px}
-  .tab{
-    flex:1;padding:10px 0;border-radius:12px;border:1px solid var(--line);
-    background:transparent;color:var(--dim);font-size:14px;font-weight:600;cursor:pointer
+  /* ---------- Drawer ---------- */
+  .topbar{display:flex;align-items:center;gap:12px;padding-top:20px}
+  .burger{
+    width:42px;height:42px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--accent);font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center
   }
-  .tab.active{background:var(--card);color:var(--ink);border-color:var(--accent)}
+  .topbar h2{font-size:16px;font-weight:600;color:var(--dim)}
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;
+    pointer-events:none;transition:opacity .25s;z-index:20
+  }
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{
+    position:fixed;top:0;left:0;bottom:0;width:250px;z-index:21;
+    background:var(--card);border-right:1px solid var(--line);
+    transform:translateX(-105%);transition:transform .25s ease;
+    padding:calc(env(safe-area-inset-top) + 30px) 16px 20px;
+  }
+  .drawer.open{transform:translateX(0)}
+  .drawer .brand{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:18px}
+  .drawer button{
+    display:block;width:100%;text-align:left;padding:13px 14px;margin-bottom:8px;
+    background:transparent;border:1px solid transparent;border-radius:12px;
+    color:var(--dim);font-size:15px;font-weight:600;cursor:pointer
+  }
+  .drawer button.active{background:var(--bg);border-color:var(--accent);color:var(--ink)}
 
-  .chart-wrap{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px 6px}
-
-  .limit{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-  .limit-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--dim)}
-  .limit-head button{background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;padding:2px 0}
-  .limit-head button:active{color:var(--accent)}
-  .bar{margin-top:10px;height:10px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
-  .bar-fill{height:100%;background:var(--accent);border-radius:6px;width:0%;transition:width .4s ease}
-  .bar-fill.full{background:var(--neg)}
-  .limit-sub{margin-top:8px;font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
-  .limit-form{display:flex;gap:8px;margin-top:10px}
-  .limit-form input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:9px 12px;font-size:16px;font-variant-numeric:tabular-nums}
-  .limit-form input:focus{outline:none;border-color:var(--accent)}
-  .limit-form button{background:var(--accent);color:#241a04;border:none;border-radius:10px;padding:0 18px;font-weight:700;font-size:14px;cursor:pointer}
-  svg{display:block;width:100%;height:210px}
-  .empty{color:var(--faint);font-size:13px;text-align:center;padding:40px 10px}
-
-  form{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-  .form-title{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
-  .row{display:flex;gap:8px}
-  input{
+  /* ---------- Shared ---------- */
+  header{padding-top:18px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+  .total{font-size:42px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:2px}
+  .sub{color:var(--dim);font-size:13px;margin-top:4px;min-height:18px}
+  .card{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  input,select{
     background:var(--bg);border:1px solid var(--line);border-radius:10px;
     color:var(--ink);padding:10px 12px;font-size:16px;width:100%;
     font-variant-numeric:tabular-nums
   }
   input:focus{outline:none;border-color:var(--accent)}
   input[type=date]{color-scheme:dark}
-  #amount{width:110px;flex:none}
-  button.save{
-    margin-top:10px;width:100%;padding:12px;border:none;border-radius:10px;
+  .btn{
+    width:100%;padding:12px;border:none;border-radius:10px;margin-top:10px;
     background:var(--accent);color:#241a04;font-size:15px;font-weight:700;cursor:pointer
   }
-  button.save:active{opacity:.8}
+  .btn:active{opacity:.8}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
   .hint{font-size:12px;color:var(--faint);margin-top:8px}
   .error{color:var(--neg);font-size:13px;margin-top:8px}
+  .row{display:flex;gap:8px}
+  .form-title{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
 
+  /* ---------- Charts ---------- */
+  .chart-wrap{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px 6px}
+  svg{display:block;width:100%;height:210px}
+  .empty{color:var(--faint);font-size:13px;text-align:center;padding:40px 10px}
+
+  /* ---------- Limit ---------- */
+  .limit-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--dim)}
+  .limit-head button{background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;padding:2px 0}
+  .bar{margin-top:10px;height:10px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+  .bar-fill{height:100%;background:var(--accent);border-radius:6px;width:0%;transition:width .4s ease}
+  .bar-fill.full{background:var(--neg)}
+  .limit-sub{margin-top:8px;font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .limit-form{display:none;gap:8px;margin-top:10px}
+  .limit-form button{background:var(--accent);color:#241a04;border:none;border-radius:10px;padding:0 18px;font-weight:700;font-size:14px;cursor:pointer}
+
+  /* ---------- History ---------- */
   .hist{margin-top:22px}
   .hist ul{list-style:none}
   .hist li{
     display:flex;align-items:center;justify-content:space-between;
-    padding:10px 2px;border-bottom:1px solid rgba(20,81,63,.5);font-size:14px
+    padding:10px 2px;border-bottom:1px solid rgba(77,60,16,.5);font-size:14px
   }
   .hist .d{color:var(--dim)}
   .hist .a{font-variant-numeric:tabular-nums;font-weight:600}
   .hist .a.minus{color:var(--neg)}
-  .hist button{background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer;padding:4px 0 4px 14px}
-  .hist button:active{color:var(--neg)}
+  .hist li button{background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer;padding:4px 0 4px 14px}
+
+  /* ---------- Budget forms ---------- */
+  .bform{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .bform-head{display:flex;justify-content:space-between;align-items:baseline}
+  .bform-head .period{font-size:16px;font-weight:700}
+  .bform-head button{background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer}
+  .bform-start{font-size:12px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th{font-size:11px;color:var(--faint);text-align:left;font-weight:600;padding:0 4px 6px}
+  td{padding:3px 4px}
+  td:first-child{font-size:13px;color:var(--dim);white-space:nowrap;width:1%}
+  td input{padding:8px 10px;font-size:15px}
+  .bform-sum{
+    display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;
+    border-top:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums
+  }
+  .bform-sum b{color:var(--accent)}
+  .bform-sum b.neg{color:var(--neg)}
+  .view{display:none}
+  .view.active{display:block}
 </style>
 </head>
 <body>
-<header>
-  <p class="eyebrow" id="eyebrow">Kapitał wpłacony · IKE</p>
-  <h1 class="total" id="total">0 zł</h1>
-  <p class="sub" id="sub"></p>
-</header>
 
-<div class="tabs">
-  <button class="tab active" id="tab-ike">IKE</button>
-  <button class="tab" id="tab-osz">Oszczędności</button>
+<div class="topbar">
+  <button class="burger" id="burger">☰</button>
+  <h2 id="view-name">IKE</h2>
 </div>
 
-<div class="limit" id="limit-card" style="display:none">
-  <div class="limit-head">
-    <span id="limit-label">Limit IKE 2026</span>
-    <button type="button" id="limit-edit">Zmień limit</button>
+<div class="overlay" id="overlay"></div>
+<nav class="drawer" id="drawer">
+  <p class="brand">Mój kapitał</p>
+  <button data-view="ike" class="active">📈 IKE</button>
+  <button data-view="osz">🛟 Oszczędności</button>
+  <button data-view="bud">📋 Budżet tygodniowy</button>
+</nav>
+
+<!-- ========== IKE / Oszczędności (wspólny widok wykresowy) ========== -->
+<div class="view active" id="view-money">
+  <header>
+    <p class="eyebrow" id="eyebrow">Kapitał wpłacony · IKE</p>
+    <h1 class="total" id="total">0 zł</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <div class="card" id="limit-card" style="display:none">
+    <div class="limit-head">
+      <span id="limit-label">Limit IKE</span>
+      <button type="button" id="limit-edit">Zmień limit</button>
+    </div>
+    <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+    <p class="limit-sub" id="limit-sub"></p>
+    <div class="limit-form" id="limit-form">
+      <input id="limit-input" type="text" inputmode="decimal">
+      <button type="button" id="limit-save">OK</button>
+    </div>
   </div>
-  <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
-  <p class="limit-sub" id="limit-sub"></p>
-  <div class="limit-form" id="limit-form" style="display:none">
-    <input id="limit-input" type="text" inputmode="decimal" placeholder="28260">
-    <button type="button" id="limit-save">OK</button>
-  </div>
+
+  <div class="chart-wrap"><div id="chart"><p class="empty">Brak danych — dodaj pierwszy wpis poniżej.</p></div></div>
+
+  <form class="card" id="money-form" autocomplete="off">
+    <p class="form-title" id="form-title">Dodaj wpłatę na IKE</p>
+    <div class="row">
+      <input id="amount" type="text" inputmode="text" placeholder="200" style="width:110px;flex:none">
+      <input id="date" type="date">
+    </div>
+    <button class="btn" type="submit">Zapisz</button>
+    <p class="hint" id="money-hint"></p>
+    <p class="error" id="money-error"></p>
+  </form>
+
+  <div class="hist"><ul id="list"></ul></div>
 </div>
 
-<div class="chart-wrap"><div id="chart"><p class="empty">Brak danych — dodaj pierwszy wpis poniżej.</p></div></div>
+<!-- ========== Budżet tygodniowy ========== -->
+<div class="view" id="view-bud">
+  <header>
+    <p class="eyebrow">Budżet tygodniowy</p>
+    <p class="sub">Uzupełnienie do kwoty startowej = wydatki tygodnia. Nadwyżkę na koniec okresu przelej na oszczędności.</p>
+  </header>
 
-<form id="form" autocomplete="off">
-  <p class="form-title" id="form-title">Dodaj wpłatę na IKE</p>
-  <div class="row">
-    <input id="amount" type="text" inputmode="text" placeholder="200">
-    <input id="date" type="date">
-  </div>
-  <button class="save" type="submit" id="save-btn">Zapisz</button>
-  <p class="hint" id="hint"></p>
-  <p class="error" id="error"></p>
-</form>
+  <form class="card" id="bud-new" autocomplete="off">
+    <p class="form-title">Nowy okres rozliczeniowy</p>
+    <div class="row">
+      <input id="bud-period" type="text" placeholder="np. 10.08–10.09.2026">
+      <input id="bud-start" type="text" inputmode="decimal" placeholder="kwota mies." style="width:130px;flex:none">
+    </div>
+    <button class="btn" type="submit">Utwórz formularz</button>
+    <p class="error" id="bud-error"></p>
+  </form>
 
-<div class="hist"><ul id="list"></ul></div>
+  <div id="bud-list"></div>
+</div>
 
 <script>
 (function(){
-  var MODES = {
-    ike: {key:"kap_ike", eyebrow:"Kapitał wpłacony · IKE", form:"Dodaj wpłatę na IKE",
-          hint:"", negatives:false, def:"200"},
-    osz: {key:"kap_osz", eyebrow:"Poduszka i oszczędności", form:"Dodaj zmianę oszczędności",
-          hint:"Wpłata: np. 2500. Wypłata: ze znakiem minus, np. -800.", negatives:true, def:""}
-  };
-  var mode = "ike";
+  var $=function(id){return document.getElementById(id)};
+  var fmt=function(n){return new Intl.NumberFormat("pl-PL",{maximumFractionDigits:0}).format(n)+" zł"};
+  var fmtD=function(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("pl-PL",{day:"numeric",month:"short",year:"2-digit"})};
+  var num=function(s){var v=parseFloat(String(s).trim().replace(",",".").replace("−","-").replace(/\s/g,""));return isNaN(v)?0:v};
 
-  var $ = function(id){return document.getElementById(id)};
-  var fmt = function(n){
-    return new Intl.NumberFormat("pl-PL",{maximumFractionDigits:0}).format(n)+" zł";
-  };
-  var fmtD = function(iso){
-    var d = new Date(iso+"T00:00:00");
-    return d.toLocaleDateString("pl-PL",{day:"numeric",month:"short",year:"2-digit"});
-  };
+  function lget(k,fb){try{return JSON.parse(localStorage.getItem(k))||fb}catch(e){return fb}}
+  function lset(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
-  function load(){
-    try{ return JSON.parse(localStorage.getItem(MODES[mode].key)) || []; }
-    catch(e){ return []; }
+  /* ---------- Drawer / routing ---------- */
+  var current="ike";
+  var NAMES={ike:"IKE",osz:"Oszczędności",bud:"Budżet tygodniowy"};
+
+  function openDrawer(o){
+    $("drawer").className="drawer"+(o?" open":"");
+    $("overlay").className="overlay"+(o?" open":"");
   }
-  function store(arr){
-    localStorage.setItem(MODES[mode].key, JSON.stringify(arr));
-  }
+  $("burger").onclick=function(){openDrawer(true)};
+  $("overlay").onclick=function(){openDrawer(false)};
 
-  function render(){
-    var cfg = MODES[mode];
-    var data = load().sort(function(a,b){return a.date<b.date?-1:1});
-    $("eyebrow").textContent = cfg.eyebrow;
-    $("form-title").textContent = cfg.form;
-    $("hint").textContent = cfg.hint;
-    $("amount").placeholder = cfg.def || "kwota";
-    $("amount").value = "";
-    $("error").textContent = "";
-    $("date").value = new Date().toISOString().slice(0,10);
-    $("tab-ike").className = "tab"+(mode==="ike"?" active":"");
-    $("tab-osz").className = "tab"+(mode==="osz"?" active":"");
+  Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(b){
+    b.onclick=function(){
+      current=b.getAttribute("data-view");
+      Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(x){
+        x.className=(x===b)?"active":"";
+      });
+      $("view-name").textContent=NAMES[current];
+      $("view-money").className="view"+(current!=="bud"?" active":"");
+      $("view-bud").className="view"+(current==="bud"?" active":"");
+      if(current==="bud") renderBud(); else renderMoney();
+      openDrawer(false);
+    };
+  });
 
-    var total = data.reduce(function(s,e){return s+e.amount},0);
-    $("total").textContent = fmt(total);
-    $("sub").textContent = data.length
-      ? data.length+" "+(data.length===1?"wpis":(data.length<5?"wpisy":"wpisów"))
-      : "";
+  /* ---------- IKE / Oszczędności ---------- */
+  var CFG={
+    ike:{key:"kap_ike",eyebrow:"Kapitał wpłacony · IKE",form:"Dodaj wpłatę na IKE",hint:"",negatives:false,def:"200"},
+    osz:{key:"kap_osz",eyebrow:"Poduszka i oszczędności",form:"Dodaj zmianę oszczędności",hint:"Wpłata: np. 2500. Wypłata: ze znakiem minus, np. -800.",negatives:true,def:""}
+  };
 
-    // IKE annual limit
+  function renderMoney(){
+    var cfg=CFG[current];
+    var data=lget(cfg.key,[]).sort(function(a,b){return a.date<b.date?-1:1});
+    $("eyebrow").textContent=cfg.eyebrow;
+    $("form-title").textContent=cfg.form;
+    $("money-hint").textContent=cfg.hint;
+    $("amount").placeholder=cfg.def||"kwota";
+    $("amount").value="";
+    $("money-error").textContent="";
+    $("date").value=new Date().toISOString().slice(0,10);
+
+    var total=data.reduce(function(s,e){return s+e.amount},0);
+    $("total").textContent=fmt(total);
+    $("sub").textContent=data.length?data.length+" "+(data.length===1?"wpis":(data.length<5?"wpisy":"wpisów")):"";
+
     var card=$("limit-card");
-    if(mode==="ike"){
+    if(current==="ike"){
       var year=new Date().getFullYear();
       var lim=parseFloat(localStorage.getItem("kap_ike_limit_"+year))||28260;
-      var used=data.reduce(function(s,e){
-        return s+(e.date.slice(0,4)==String(year)?e.amount:0);
-      },0);
+      var used=data.reduce(function(s,e){return s+(e.date.slice(0,4)==String(year)?e.amount:0)},0);
       var pct=Math.min(100,used/lim*100);
       card.style.display="block";
       $("limit-label").textContent="Limit IKE "+year;
       var bf=$("bar-fill");
       bf.style.width=pct+"%";
       bf.className="bar-fill"+(used>=lim?" full":"");
-      $("limit-sub").textContent=
-        fmt(used)+" z "+fmt(lim)+" ("+pct.toFixed(1).replace(".",",")+"%) · zostało "+fmt(Math.max(0,lim-used));
-    } else {
-      card.style.display="none";
-    }
+      $("limit-sub").textContent=fmt(used)+" z "+fmt(lim)+" ("+pct.toFixed(1).replace(".",",")+"%) · zostało "+fmt(Math.max(0,lim-used));
+    } else card.style.display="none";
 
-    // history (newest first)
-    var list = $("list"); list.innerHTML = "";
+    var list=$("list");list.innerHTML="";
     data.slice().reverse().forEach(function(e){
-      var li = document.createElement("li");
-      var neg = e.amount < 0;
-      li.innerHTML =
-        '<span class="d">'+fmtD(e.date)+'</span>'+
-        '<span class="a'+(neg?' minus':'')+'">'+(neg?"−":"+")+fmt(Math.abs(e.amount))+'</span>';
-      var del = document.createElement("button");
-      del.textContent = "Usuń";
-      del.onclick = function(){
-        store(load().filter(function(x){return x.id!==e.id}));
-        render();
-      };
+      var li=document.createElement("li");
+      var neg=e.amount<0;
+      li.innerHTML='<span class="d">'+fmtD(e.date)+'</span><span class="a'+(neg?' minus':'')+'">'+(neg?"−":"+")+fmt(Math.abs(e.amount))+'</span>';
+      var del=document.createElement("button");
+      del.textContent="Usuń";
+      del.onclick=function(){lset(cfg.key,lget(cfg.key,[]).filter(function(x){return x.id!==e.id}));renderMoney()};
       li.appendChild(del);
       list.appendChild(li);
     });
@@ -209,63 +279,46 @@
   }
 
   function drawChart(data){
-    var box = $("chart");
-    if(data.length===0){
-      box.innerHTML = '<p class="empty">Brak danych — dodaj pierwszy wpis poniżej.</p>';
-      return;
-    }
+    var box=$("chart");
+    if(data.length===0){box.innerHTML='<p class="empty">Brak danych — dodaj pierwszy wpis poniżej.</p>';return}
     var W=440,H=210,PT=10,PR=12,PB=26,PL=52;
     var pts=[],c=0;
     data.forEach(function(e){c+=e.amount;pts.push(c)});
     var min=Math.min(0,Math.min.apply(null,pts));
     var max=Math.max.apply(null,pts);
     if(max===min)max=min+1;
-
-    // nice Y ticks: 3-4 rounded values
-    var span=max-min;
-    var rawStep=span/3;
+    var span=max-min,rawStep=span/3;
     var mag=Math.pow(10,Math.floor(Math.log(rawStep)/Math.LN10));
     var step=Math.ceil(rawStep/mag)*mag;
     var y0=Math.floor(min/step)*step;
     var ticks=[];
-    for(var t=y0;t<=max+step*0.001;t+=step) ticks.push(t);
-    min=Math.min(min,ticks[0]); max=Math.max(max,ticks[ticks.length-1]);
-
+    for(var t=y0;t<=max+step*0.001;t+=step)ticks.push(t);
+    min=Math.min(min,ticks[0]);max=Math.max(max,ticks[ticks.length-1]);
     var X=function(i){return pts.length===1?(PL+(W-PL-PR)/2):PL+(W-PL-PR)*i/(pts.length-1)};
     var Y=function(v){return H-PB-(H-PT-PB)*(v-min)/(max-min)};
     var fmtK=function(v){
-      if(Math.abs(v)>=1000) return (v/1000).toLocaleString("pl-PL",{maximumFractionDigits:1})+" tys.";
+      if(Math.abs(v)>=1000)return (v/1000).toLocaleString("pl-PL",{maximumFractionDigits:1})+" tys.";
       return Math.round(v).toLocaleString("pl-PL");
     };
-
-    // Y grid + labels
     var grid="";
     ticks.forEach(function(v){
       grid+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#4d3c10" stroke-width="1"'+(v===0&&min<0?' stroke-dasharray="4 4"':'')+'/>';
       grid+='<text x="'+(PL-7)+'" y="'+(Y(v)+3.5)+'" text-anchor="end" font-size="10" fill="#8a7231">'+fmtK(v)+'</text>';
     });
-
-    // X labels: first, middle, last (skip duplicates)
     var xl="";
-    var idxs = pts.length===1 ? [0] : (pts.length===2 ? [0,pts.length-1] : [0,Math.floor((pts.length-1)/2),pts.length-1]);
+    var idxs=pts.length===1?[0]:(pts.length===2?[0,pts.length-1]:[0,Math.floor((pts.length-1)/2),pts.length-1]);
     var seen={};
     idxs.forEach(function(i){
       var lab=fmtD(data[i].date);
-      if(seen[lab])return; seen[lab]=1;
-      var anchor = i===0?"start":(i===pts.length-1?"end":"middle");
+      if(seen[lab])return;seen[lab]=1;
+      var anchor=i===0?"start":(i===pts.length-1?"end":"middle");
       xl+='<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="'+anchor+'" font-size="10" fill="#8a7231">'+lab+'</text>';
     });
-
-    // line path
     var d="M "+X(0)+" "+Y(pts[0]);
-    for(var i=1;i<pts.length;i++){
-      d+=" L "+X(i)+" "+Y(pts[i]);
-    }
+    for(var i=1;i<pts.length;i++)d+=" L "+X(i)+" "+Y(pts[i]);
     var base=Y(Math.max(0,min));
     var fill=d+" L "+X(pts.length-1)+" "+base+" L "+X(0)+" "+base+" Z";
-
-    box.innerHTML =
-      '<svg viewBox="0 0 '+W+' '+H+'">'+
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'">'+
       '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0%" stop-color="#ffc93c" stop-opacity=".3"/>'+
       '<stop offset="100%" stop-color="#ffc93c" stop-opacity="0"/></linearGradient></defs>'+
@@ -276,46 +329,116 @@
       '</svg>';
   }
 
-  $("form").onsubmit = function(ev){
+  $("money-form").onsubmit=function(ev){
     ev.preventDefault();
-    var cfg = MODES[mode];
-    var raw = $("amount").value.trim().replace(",",".").replace("−","-");
-    if(raw==="" && cfg.def) raw = cfg.def;
-    var v = parseFloat(raw);
-    if(isNaN(v) || v===0){ $("error").textContent="Podaj kwotę różną od zera."; return; }
-    if(v<0 && !cfg.negatives){ $("error").textContent="Na IKE zapisuj tylko wpłaty (dodatnie)."; return; }
-    var arr = load();
-    arr.push({id:Date.now(), date:$("date").value, amount:v});
-    store(arr);
-    render();
+    var cfg=CFG[current];
+    var raw=$("amount").value.trim();
+    if(raw===""&&cfg.def)raw=cfg.def;
+    var v=num(raw);
+    if(v===0){$("money-error").textContent="Podaj kwotę różną od zera.";return}
+    if(v<0&&!cfg.negatives){$("money-error").textContent="Na IKE zapisuj tylko wpłaty (dodatnie).";return}
+    var arr=lget(cfg.key,[]);
+    arr.push({id:Date.now(),date:$("date").value,amount:v});
+    lset(cfg.key,arr);
+    renderMoney();
   };
-
-  $("tab-ike").onclick=function(){mode="ike";render()};
-  $("tab-osz").onclick=function(){mode="osz";render()};
 
   $("limit-edit").onclick=function(){
     var f=$("limit-form");
     var year=new Date().getFullYear();
     var cur=parseFloat(localStorage.getItem("kap_ike_limit_"+year))||28260;
-    if(f.style.display==="none"){
-      $("limit-input").value=cur;
-      f.style.display="flex";
-      $("limit-input").focus();
-    } else {
-      f.style.display="none";
-    }
+    if(f.style.display!=="flex"){$("limit-input").value=cur;f.style.display="flex";$("limit-input").focus()}
+    else f.style.display="none";
   };
   $("limit-save").onclick=function(){
     var year=new Date().getFullYear();
-    var v=parseFloat($("limit-input").value.replace(",",".").replace(/\s/g,""));
-    if(!isNaN(v)&&v>0){
-      localStorage.setItem("kap_ike_limit_"+year,v);
-      $("limit-form").style.display="none";
-      render();
-    }
+    var v=num($("limit-input").value);
+    if(v>0){localStorage.setItem("kap_ike_limit_"+year,v);$("limit-form").style.display="none";renderMoney()}
   };
 
-  render();
+  /* ---------- Budżet tygodniowy ---------- */
+  var BKEY="kap_forms";
+
+  function renderBud(){
+    var forms=lget(BKEY,[]);
+    var box=$("bud-list");box.innerHTML="";
+    $("bud-error").textContent="";
+    forms.slice().reverse().forEach(function(f){
+      var el=document.createElement("div");
+      el.className="bform";
+      var spent=f.weeks.reduce(function(s,w){return s+num(w.spent)},0);
+      var left=num(f.start)-spent;
+
+      var rows="";
+      f.weeks.forEach(function(w,i){
+        rows+='<tr>'+
+          '<td>Tydz. '+(i+1)+'</td>'+
+          '<td><input type="text" inputmode="decimal" placeholder="start" value="'+(w.start||"")+'" data-f="'+f.id+'" data-w="'+i+'" data-k="start"></td>'+
+          '<td><input type="text" inputmode="decimal" placeholder="wydano" value="'+(w.spent||"")+'" data-f="'+f.id+'" data-w="'+i+'" data-k="spent"></td>'+
+        '</tr>';
+      });
+
+      el.innerHTML=
+        '<div class="bform-head"><span class="period">'+f.period+'</span><button data-del="'+f.id+'">Usuń</button></div>'+
+        '<p class="bform-start">Kwota startowa: '+fmt(num(f.start))+'</p>'+
+        '<table><tr><th></th><th>Kwota startowa tyg.</th><th>Wydano</th></tr>'+rows+'</table>'+
+        '<div class="bform-sum"><span>Wydano razem: <b class="'+(spent>num(f.start)?"neg":"")+'">'+fmt(spent)+'</b></span>'+
+        '<span>Zostało: <b class="'+(left<0?"neg":"")+'">'+fmt(left)+'</b></span></div>';
+      box.appendChild(el);
+    });
+
+    // inputs: save on change
+    Array.prototype.forEach.call(box.querySelectorAll("input"),function(inp){
+      inp.onchange=function(){
+        var forms=lget(BKEY,[]);
+        var f=forms.filter(function(x){return String(x.id)===inp.getAttribute("data-f")})[0];
+        if(!f)return;
+        f.weeks[parseInt(inp.getAttribute("data-w"))][inp.getAttribute("data-k")]=inp.value;
+        lset(BKEY,forms);
+        renderBud();
+      };
+    });
+    // delete buttons
+    Array.prototype.forEach.call(box.querySelectorAll("button[data-del]"),function(b){
+      b.onclick=function(){
+        if(!confirmDel(b))return;
+        lset(BKEY,lget(BKEY,[]).filter(function(x){return String(x.id)!==b.getAttribute("data-del")}));
+        renderBud();
+      };
+    });
+  }
+
+  // double-tap delete (PWA blokuje confirm())
+  function confirmDel(btn){
+    if(btn.getAttribute("data-armed")==="1")return true;
+    btn.setAttribute("data-armed","1");
+    btn.textContent="Na pewno?";
+    btn.style.color="#ff7d6b";
+    setTimeout(function(){
+      btn.removeAttribute("data-armed");
+      btn.textContent="Usuń";
+      btn.style.color="";
+    },2500);
+    return false;
+  }
+
+  $("bud-new").onsubmit=function(ev){
+    ev.preventDefault();
+    var period=$("bud-period").value.trim();
+    var start=num($("bud-start").value);
+    if(!period){$("bud-error").textContent="Podaj okres rozliczeniowy.";return}
+    if(start<=0){$("bud-error").textContent="Podaj miesięczną kwotę startową.";return}
+    var forms=lget(BKEY,[]);
+    forms.push({
+      id:Date.now(),period:period,start:start,
+      weeks:[{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""}]
+    });
+    lset(BKEY,forms);
+    $("bud-period").value="";$("bud-start").value="";
+    renderBud();
+  };
+
+  renderMoney();
 })();
 </script>
 </body>
