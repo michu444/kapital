@@ -239,10 +239,14 @@
   <form class="card" id="bud-new" autocomplete="off">
     <p class="form-title">Nowy okres rozliczeniowy</p>
     <div class="row">
-      <input id="bud-period" type="text" placeholder="np. 10.08–10.09.2026">
-      <input id="bud-start" type="text" inputmode="decimal" placeholder="kwota mies." style="width:130px;flex:none">
+      <input id="bud-from" type="date" aria-label="Początek okresu">
+      <input id="bud-to" type="date" aria-label="Koniec okresu">
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input id="bud-start" type="text" inputmode="decimal" placeholder="miesięczna kwota startowa">
     </div>
     <button class="btn" type="submit">Utwórz formularz</button>
+    <p class="hint">Od–do okresu rozliczeniowego, np. 10 lipca – 10 sierpnia.</p>
     <p class="error" id="bud-error"></p>
   </form>
 
@@ -511,19 +515,38 @@
 
   $("bud-new").onsubmit=function(ev){
     ev.preventDefault();
-    var period=$("bud-period").value.trim();
+    var from=$("bud-from").value,to=$("bud-to").value;
     var start=num($("bud-start").value);
-    if(!period){$("bud-error").textContent="Podaj okres rozliczeniowy.";return}
+    if(!from||!to){$("bud-error").textContent="Wybierz daty początku i końca okresu.";return}
+    if(to<=from){$("bud-error").textContent="Data końca musi być późniejsza niż początku.";return}
     if(start<=0){$("bud-error").textContent="Podaj miesięczną kwotę startową.";return}
+    var fD=function(iso){
+      var d=new Date(iso+"T00:00:00");
+      return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
+    };
+    var period=fD(from)+" – "+fD(to);
     var forms=lget(BKEY,[]);
     forms.push({
-      id:Date.now(),period:period,start:start,
+      id:Date.now(),period:period,from:from,to:to,start:start,
       weeks:[{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""}]
     });
     lset(BKEY,forms);
-    $("bud-period").value="";$("bud-start").value="";
+    $("bud-start").value="";
+    prefillDates();
     renderBud();
   };
+
+  // domyślne daty: 10. bieżącego → 10. następnego miesiąca (cykl wypłat)
+  function prefillDates(){
+    var n=new Date();
+    var from=new Date(n.getFullYear(),n.getMonth(),10);
+    if(n.getDate()<10)from=new Date(n.getFullYear(),n.getMonth()-1,10);
+    var to=new Date(from.getFullYear(),from.getMonth()+1,10);
+    var iso=function(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+    $("bud-from").value=iso(from);
+    $("bud-to").value=iso(to);
+  }
+  prefillDates();
 
   /* ---------- Zegar ---------- */
   function tick(){
