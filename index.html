@@ -177,6 +177,21 @@
   .tile-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
   .tile-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:6px}
   .tile-sub{font-size:11px;color:var(--faint);margin-top:4px;font-variant-numeric:tabular-nums}
+
+  /* ---------- Cele ---------- */
+  .goal{
+    display:flex;align-items:center;gap:14px;margin-top:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px
+  }
+  .goal .ring{width:64px;height:64px;flex:none}
+  .goal .ring svg{width:64px;height:64px}
+  .goal .g-info{flex:1;min-width:0}
+  .goal .g-name{font-size:15px;font-weight:700}
+  .goal .g-nums{font-size:12px;color:var(--faint);margin-top:3px;font-variant-numeric:tabular-nums}
+  .goal .g-pct{font-size:13px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+  .goal .g-pct.done{color:#7fe08f}
+  .goal button{background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer;padding:4px 0 4px 10px}
+  .goals-title{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin:22px 0 2px}
 </style>
 </head>
 <body>
@@ -228,6 +243,7 @@
   <button data-view="home" class="active">Strona główna</button>
   <button data-view="ike">IKE</button>
   <button data-view="osz">Oszczędności</button>
+  <button data-view="cele">Cele</button>
   <button data-view="bud">Budżet tygodniowy</button>
   <button id="pin-change" style="margin-top:18px;color:var(--faint);font-size:13px">Zmień PIN</button>
   <button id="bio-toggle" style="color:var(--faint);font-size:13px">Włącz Face ID</button>
@@ -257,6 +273,7 @@
 
   <div class="chart-wrap"><div id="home-chart"><p class="empty">Brak danych.</p></div></div>
   <p class="hint" style="text-align:center;margin-top:10px" id="home-chart-hint"></p>
+  <div id="home-goals"></div>
 </div>
 
 <!-- ========== IKE / Oszczędności (wspólny widok wykresowy) ========== -->
@@ -296,6 +313,24 @@
   <div class="hist"><ul id="list"></ul></div>
 </div>
 
+<!-- ========== Cele ========== -->
+<div class="view" id="view-cele">
+  <header>
+    <p class="eyebrow">Cele oszczędnościowe</p>
+    <p class="sub">Postęp celu liczy się z aktualnego stanu oszczędności.</p>
+  </header>
+  <form class="card" id="goal-new" autocomplete="off">
+    <p class="form-title">Dodaj cel</p>
+    <div class="row">
+      <input id="goal-name" type="text" placeholder="np. Poduszka finansowa">
+      <input id="goal-target" type="text" inputmode="decimal" placeholder="kwota" style="width:110px;flex:none">
+    </div>
+    <button class="btn" type="submit">Zapisz cel</button>
+    <p class="error" id="goal-error"></p>
+  </form>
+  <div id="goal-list"></div>
+</div>
+
 <!-- ========== Budżet tygodniowy ========== -->
 <div class="view" id="view-bud">
   <header>
@@ -332,7 +367,7 @@
 
   /* ---------- Drawer / routing ---------- */
   var current="home";
-  var NAMES={home:"Strona główna",ike:"IKE",osz:"Oszczędności",bud:"Budżet tygodniowy"};
+  var NAMES={home:"Strona główna",ike:"IKE",osz:"Oszczędności",cele:"Cele",bud:"Budżet tygodniowy"};
 
   function show(view){
     current=view;
@@ -343,7 +378,9 @@
     $("view-home").className="view"+(view==="home"?" active":"");
     $("view-money").className="view"+((view==="ike"||view==="osz")?" active":"");
     $("view-bud").className="view"+(view==="bud"?" active":"");
+    $("view-cele").className="view"+(view==="cele"?" active":"");
     if(view==="bud")renderBud();
+    else if(view==="cele")renderCele();
     else if(view==="home")renderHome();
     else renderMoney();
   }
@@ -396,6 +433,11 @@
       drawChartInto(box,all);
       $("home-chart-hint").textContent="Łączny kapitał (IKE + oszczędności) w czasie";
     }
+
+    var goals=lget(GKEY,[]);
+    $("home-goals").innerHTML=goals.length
+      ? '<p class="goals-title">Cele</p>'+goals.map(function(g){return goalCard(g,false)}).join("")
+      : "";
   }
 
   /* ---------- IKE / Oszczędności ---------- */
@@ -548,6 +590,64 @@
     var year=new Date().getFullYear();
     var v=num($("limit-input").value);
     if(v>0){localStorage.setItem("kap_ike_limit_"+year,v);$("limit-form").style.display="none";renderMoney()}
+  };
+
+
+  /* ---------- Cele ---------- */
+  var GKEY="kap_goals";
+  function oszTotal(){return lget("kap_osz",[]).reduce(function(s,e){return s+e.amount},0)}
+
+  function goalRing(pct,size){
+    var r=(size-10)/2,c=2*Math.PI*r,off=c*(1-Math.min(1,pct));
+    var col=pct>=1?"#7fe08f":"#ffc93c";
+    return '<svg viewBox="0 0 '+size+' '+size+'">'+
+      '<circle cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+r+'" fill="none" stroke="#4d3c10" stroke-width="7"/>'+
+      '<circle cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="7" '+
+        'stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+off+'" '+
+        'transform="rotate(-90 '+(size/2)+' '+(size/2)+')"/>'+
+      '<text x="'+(size/2)+'" y="'+(size/2+4)+'" text-anchor="middle" font-size="'+(size*0.22)+'" font-weight="700" fill="'+col+'">'+
+        Math.round(Math.min(100,pct*100))+'%</text>'+
+      '</svg>';
+  }
+
+  function goalCard(g,withDelete){
+    var have=oszTotal(),pct=g.target>0?have/g.target:0;
+    return '<div class="goal">'+
+      '<div class="ring">'+goalRing(pct,64)+'</div>'+
+      '<div class="g-info">'+
+        '<p class="g-name">'+g.name+'</p>'+
+        '<p class="g-nums">'+fmt(Math.min(have,g.target))+' / '+fmt(g.target)+
+          (pct>=1?' · osiągnięty!':' · brakuje '+fmt(Math.max(0,g.target-have)))+'</p>'+
+      '</div>'+
+      (withDelete?'<button data-gdel="'+g.id+'">Usuń</button>':'')+
+      '</div>';
+  }
+
+  function renderCele(){
+    var goals=lget(GKEY,[]);
+    $("goal-error").textContent="";
+    var box=$("goal-list");
+    box.innerHTML=goals.map(function(g){return goalCard(g,true)}).join("")||
+      '<p class="hint" style="text-align:center;margin-top:20px">Brak celów — dodaj pierwszy powyżej.</p>';
+    Array.prototype.forEach.call(box.querySelectorAll("button[data-gdel]"),function(b){
+      b.onclick=function(){
+        if(!confirmDel(b))return;
+        lset(GKEY,lget(GKEY,[]).filter(function(x){return String(x.id)!==b.getAttribute("data-gdel")}));
+        renderCele();
+      };
+    });
+  }
+
+  $("goal-new").onsubmit=function(ev){
+    ev.preventDefault();
+    var name=$("goal-name").value.trim(),target=num($("goal-target").value);
+    if(!name){$("goal-error").textContent="Podaj nazwę celu.";return}
+    if(target<=0){$("goal-error").textContent="Podaj kwotę docelową.";return}
+    var goals=lget(GKEY,[]);
+    goals.push({id:Date.now(),name:name,target:target});
+    lset(GKEY,goals);
+    $("goal-name").value="";$("goal-target").value="";
+    renderCele();
   };
 
   /* ---------- Budżet tygodniowy ---------- */
