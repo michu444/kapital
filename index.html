@@ -19,7 +19,22 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     padding:env(safe-area-inset-top) 18px 60px;
     max-width:480px; margin:0 auto;
+    min-height:100vh;
   }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(60% 40% at 85% -5%, rgba(255,201,60,.13), transparent 70%),
+      radial-gradient(50% 35% at 0% 100%, rgba(255,201,60,.07), transparent 70%),
+      repeating-linear-gradient(-45deg, rgba(255,201,60,.022) 0 1px, transparent 1px 14px),
+      linear-gradient(180deg, #241a04 0%, var(--bg) 45%, #170f02 100%);
+  }
+  .clock{
+    margin:-6px 0 18px;padding:12px 14px;border:1px solid var(--line);
+    border-radius:12px;background:var(--bg)
+  }
+  .clock-time{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .clock-date{font-size:12px;color:var(--dim);margin-top:2px;text-transform:capitalize}
 
   /* ---------- Drawer ---------- */
   .topbar{display:flex;align-items:center;gap:12px;padding-top:20px}
@@ -119,6 +134,17 @@
   .bform-sum b.neg{color:var(--neg)}
   .view{display:none}
   .view.active{display:block}
+
+  /* ---------- Strona główna ---------- */
+  .tiles{display:flex;gap:10px;margin-top:16px}
+  .tile{
+    flex:1;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:14px;cursor:pointer
+  }
+  .tile:active{border-color:var(--accent)}
+  .tile-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+  .tile-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:6px}
+  .tile-sub{font-size:11px;color:var(--faint);margin-top:4px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -131,13 +157,43 @@
 <div class="overlay" id="overlay"></div>
 <nav class="drawer" id="drawer">
   <p class="brand">Mój kapitał</p>
-  <button data-view="ike" class="active">📈 IKE</button>
-  <button data-view="osz">🛟 Oszczędności</button>
-  <button data-view="bud">📋 Budżet tygodniowy</button>
+  <div class="clock">
+    <p class="clock-time" id="clock-time">—</p>
+    <p class="clock-date" id="clock-date"></p>
+  </div>
+  <button data-view="home" class="active">Strona główna</button>
+  <button data-view="ike">IKE</button>
+  <button data-view="osz">Oszczędności</button>
+  <button data-view="bud">Budżet tygodniowy</button>
 </nav>
 
+<!-- ========== Strona główna ========== -->
+<div class="view active" id="view-home">
+  <header>
+    <p class="eyebrow">Razem odłożone</p>
+    <h1 class="total" id="home-total">0 zł</h1>
+    <p class="sub" id="home-sub"></p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile" id="tile-ike">
+      <p class="tile-label">IKE</p>
+      <p class="tile-val" id="home-ike">0 zł</p>
+      <p class="tile-sub" id="home-ike-sub"></p>
+    </div>
+    <div class="tile" id="tile-osz">
+      <p class="tile-label">Oszczędności</p>
+      <p class="tile-val" id="home-osz">0 zł</p>
+      <p class="tile-sub" id="home-osz-sub"></p>
+    </div>
+  </div>
+
+  <div class="chart-wrap"><div id="home-chart"><p class="empty">Brak danych.</p></div></div>
+  <p class="hint" style="text-align:center;margin-top:10px" id="home-chart-hint"></p>
+</div>
+
 <!-- ========== IKE / Oszczędności (wspólny widok wykresowy) ========== -->
-<div class="view active" id="view-money">
+<div class="view" id="view-money">
   <header>
     <p class="eyebrow" id="eyebrow">Kapitał wpłacony · IKE</p>
     <h1 class="total" id="total">0 zł</h1>
@@ -204,8 +260,22 @@
   function lset(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
   /* ---------- Drawer / routing ---------- */
-  var current="ike";
-  var NAMES={ike:"IKE",osz:"Oszczędności",bud:"Budżet tygodniowy"};
+  var current="home";
+  var NAMES={home:"Strona główna",ike:"IKE",osz:"Oszczędności",bud:"Budżet tygodniowy"};
+
+  function show(view){
+    current=view;
+    Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(x){
+      x.className=(x.getAttribute("data-view")===view)?"active":"";
+    });
+    $("view-name").textContent=NAMES[view];
+    $("view-home").className="view"+(view==="home"?" active":"");
+    $("view-money").className="view"+((view==="ike"||view==="osz")?" active":"");
+    $("view-bud").className="view"+(view==="bud"?" active":"");
+    if(view==="bud")renderBud();
+    else if(view==="home")renderHome();
+    else renderMoney();
+  }
 
   function openDrawer(o){
     $("drawer").className="drawer"+(o?" open":"");
@@ -215,18 +285,35 @@
   $("overlay").onclick=function(){openDrawer(false)};
 
   Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(b){
-    b.onclick=function(){
-      current=b.getAttribute("data-view");
-      Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(x){
-        x.className=(x===b)?"active":"";
-      });
-      $("view-name").textContent=NAMES[current];
-      $("view-money").className="view"+(current!=="bud"?" active":"");
-      $("view-bud").className="view"+(current==="bud"?" active":"");
-      if(current==="bud") renderBud(); else renderMoney();
-      openDrawer(false);
-    };
+    b.onclick=function(){show(b.getAttribute("data-view"));openDrawer(false)};
   });
+  $("tile-ike").onclick=function(){show("ike")};
+  $("tile-osz").onclick=function(){show("osz")};
+
+  /* ---------- Strona główna ---------- */
+  function renderHome(){
+    var ike=lget("kap_ike",[]).sort(function(a,b){return a.date<b.date?-1:1});
+    var osz=lget("kap_osz",[]).sort(function(a,b){return a.date<b.date?-1:1});
+    var ti=ike.reduce(function(s,e){return s+e.amount},0);
+    var to=osz.reduce(function(s,e){return s+e.amount},0);
+    $("home-total").textContent=fmt(ti+to);
+    $("home-ike").textContent=fmt(ti);
+    $("home-osz").textContent=fmt(to);
+    $("home-ike-sub").textContent=ike.length?ike.length+" wpł.":"brak wpisów";
+    $("home-osz-sub").textContent=osz.length?osz.length+" wpis.":"brak wpisów";
+    $("home-sub").textContent=(ti+to)>0?"IKE + oszczędności łącznie":"Dodaj pierwsze wpisy w zakładkach IKE i Oszczędności";
+
+    // wspólny wykres: suma skumulowana obu pul po datach
+    var all=ike.concat(osz).sort(function(a,b){return a.date<b.date?-1:1});
+    var box=$("home-chart");
+    if(all.length===0){
+      box.innerHTML='<p class="empty">Brak danych.</p>';
+      $("home-chart-hint").textContent="";
+    } else {
+      drawChartInto(box,all);
+      $("home-chart-hint").textContent="Łączny kapitał (IKE + oszczędności) w czasie";
+    }
+  }
 
   /* ---------- IKE / Oszczędności ---------- */
   var CFG={
@@ -275,11 +362,10 @@
       list.appendChild(li);
     });
 
-    drawChart(data);
+    drawChartInto($("chart"),data);
   }
 
-  function drawChart(data){
-    var box=$("chart");
+  function drawChartInto(box,data){
     if(data.length===0){box.innerHTML='<p class="empty">Brak danych — dodaj pierwszy wpis poniżej.</p>';return}
     var W=440,H=210,PT=10,PR=12,PB=26,PL=52;
     var pts=[],c=0;
@@ -314,16 +400,17 @@
       var anchor=i===0?"start":(i===pts.length-1?"end":"middle");
       xl+='<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="'+anchor+'" font-size="10" fill="#8a7231">'+lab+'</text>';
     });
+    var gid="g_"+(box.id||"c");
     var d="M "+X(0)+" "+Y(pts[0]);
     for(var i=1;i<pts.length;i++)d+=" L "+X(i)+" "+Y(pts[i]);
     var base=Y(Math.max(0,min));
     var fill=d+" L "+X(pts.length-1)+" "+base+" L "+X(0)+" "+base+" Z";
     box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'">'+
-      '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+
+      '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0%" stop-color="#ffc93c" stop-opacity=".3"/>'+
       '<stop offset="100%" stop-color="#ffc93c" stop-opacity="0"/></linearGradient></defs>'+
       grid+xl+
-      '<path d="'+fill+'" fill="url(#g)"/>'+
+      '<path d="'+fill+'" fill="url(#'+gid+')"/>'+
       '<path d="'+d+'" fill="none" stroke="#ffc93c" stroke-width="2.5" stroke-linejoin="round"/>'+
       '<circle cx="'+X(pts.length-1)+'" cy="'+Y(pts[pts.length-1])+'" r="4" fill="#ffc93c"/>'+
       '</svg>';
@@ -438,7 +525,18 @@
     renderBud();
   };
 
-  renderMoney();
+  /* ---------- Zegar ---------- */
+  function tick(){
+    var n=new Date();
+    $("clock-time").textContent=
+      String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");
+    $("clock-date").textContent=
+      n.toLocaleDateString("pl-PL",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  }
+  tick();
+  setInterval(tick,15000);
+
+  show("home");
 })();
 </script>
 </body>
