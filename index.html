@@ -137,6 +137,19 @@
   .view{display:none}
   .view.active{display:block}
 
+  /* ---------- Blokada PIN ---------- */
+  .lock{
+    position:fixed;inset:0;z-index:50;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:24px
+  }
+  .lock.hidden{display:none}
+  .lock-box{width:100%;max-width:280px;text-align:center}
+  .lock-box .brand{margin-bottom:26px}
+  .lock-title{font-size:15px;font-weight:600;color:var(--dim);margin-bottom:14px}
+  .lock-box input{
+    text-align:center;font-size:30px;letter-spacing:14px;padding:12px 0 12px 14px
+  }
+
   /* ---------- Strona główna ---------- */
   .tiles{display:flex;gap:10px;margin-top:16px}
   .tile{
@@ -150,6 +163,15 @@
 </style>
 </head>
 <body>
+
+<div class="lock" id="lock">
+  <div class="lock-box">
+    <p class="brand">Mój kapitał</p>
+    <p class="lock-title" id="lock-title">Podaj PIN</p>
+    <input id="lock-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+    <p class="error" id="lock-error"></p>
+  </div>
+</div>
 
 <div class="topbar">
   <button class="burger" id="burger">☰</button>
@@ -167,6 +189,7 @@
   <button data-view="ike">IKE</button>
   <button data-view="osz">Oszczędności</button>
   <button data-view="bud">Budżet tygodniowy</button>
+  <button id="pin-change" style="margin-top:18px;color:var(--faint);font-size:13px">Zmień PIN</button>
 </nav>
 
 <!-- ========== Strona główna ========== -->
@@ -271,7 +294,7 @@
 
   function show(view){
     current=view;
-    Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(x){
+    Array.prototype.forEach.call(document.querySelectorAll(".drawer button[data-view]"),function(x){
       x.className=(x.getAttribute("data-view")===view)?"active":"";
     });
     $("view-name").textContent=NAMES[view];
@@ -290,9 +313,15 @@
   $("burger").onclick=function(){openDrawer(true)};
   $("overlay").onclick=function(){openDrawer(false)};
 
-  Array.prototype.forEach.call(document.querySelectorAll(".drawer button"),function(b){
+  Array.prototype.forEach.call(document.querySelectorAll(".drawer button[data-view]"),function(b){
     b.onclick=function(){show(b.getAttribute("data-view"));openDrawer(false)};
   });
+  $("pin-change").onclick=function(){
+    localStorage.removeItem("kap_pin");
+    openDrawer(false);
+    $("lock").className="lock";
+    initLock();
+  };
   $("tile-ike").onclick=function(){show("ike")};
   $("tile-osz").onclick=function(){show("osz")};
 
@@ -558,6 +587,53 @@
     $("bud-to").value=iso(to);
   }
   prefillDates();
+
+  /* ---------- Blokada PIN ---------- */
+  function pinHash(s){
+    // FNV-1a, wystarczające do lokalnej blokady prywatności
+    var h=2166136261;
+    for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*16777619)>>>0}
+    return "v1_"+h.toString(16);
+  }
+  var pinFirst=null; // bufor przy ustawianiu (podwójne wpisanie)
+  function initLock(){
+    var stored=localStorage.getItem("kap_pin");
+    $("lock-title").textContent=stored?"Podaj PIN":"Ustaw PIN (4 cyfry)";
+    $("lock-pin").value="";$("lock-error").textContent="";
+    $("lock-pin").focus();
+  }
+  $("lock-pin").addEventListener("input",function(){
+    var v=$("lock-pin").value.replace(/\D/g,"");
+    $("lock-pin").value=v;
+    if(v.length<4)return;
+    var stored=localStorage.getItem("kap_pin");
+    if(!stored){
+      if(pinFirst===null){
+        pinFirst=v;
+        $("lock-title").textContent="Powtórz PIN";
+        $("lock-pin").value="";
+        return;
+      }
+      if(pinFirst===v){
+        localStorage.setItem("kap_pin",pinHash(v));
+        pinFirst=null;
+        $("lock").className="lock hidden";
+      } else {
+        pinFirst=null;
+        $("lock-title").textContent="Ustaw PIN (4 cyfry)";
+        $("lock-error").textContent="PIN-y się różnią, spróbuj jeszcze raz.";
+        $("lock-pin").value="";
+      }
+      return;
+    }
+    if(pinHash(v)===stored){
+      $("lock").className="lock hidden";
+    } else {
+      $("lock-error").textContent="Błędny PIN.";
+      $("lock-pin").value="";
+    }
+  });
+  initLock();
 
   /* ---------- Zegar ---------- */
   function tick(){
