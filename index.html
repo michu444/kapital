@@ -461,9 +461,12 @@
       var left=num(f.start)-spent;
 
       var rows="";
+      var lastDays=f.days?f.days-7*(f.weeks.length-1):7;
       f.weeks.forEach(function(w,i){
+        var lab="Tydz. "+(i+1);
+        if(f.days&&i===f.weeks.length-1&&lastDays>0&&lastDays<7)lab+=" ("+lastDays+" dn.)";
         rows+='<tr>'+
-          '<td>Tydz. '+(i+1)+'</td>'+
+          '<td>'+lab+'</td>'+
           '<td><input type="text" inputmode="decimal" placeholder="start" value="'+(w.start||"")+'" data-f="'+f.id+'" data-w="'+i+'" data-k="start"></td>'+
           '<td><input type="text" inputmode="decimal" placeholder="wydano" value="'+(w.spent||"")+'" data-f="'+f.id+'" data-w="'+i+'" data-k="spent"></td>'+
         '</tr>';
@@ -471,7 +474,8 @@
 
       el.innerHTML=
         '<div class="bform-head"><span class="period">'+f.period+'</span><button data-del="'+f.id+'">Usuń</button></div>'+
-        '<p class="bform-start">Kwota startowa: '+fmt(num(f.start))+'</p>'+
+        '<p class="bform-start">Kwota startowa: '+fmt(num(f.start))+
+          (f.days?' · '+f.weeks.length+' '+(f.weeks.length===1?"tydzień":(f.weeks.length<5?"tygodnie":"tygodni"))+' ('+f.days+' dni)':'')+'</p>'+
         '<table><tr><th></th><th>Kwota startowa tyg.</th><th>Wydano</th></tr>'+rows+'</table>'+
         '<div class="bform-sum"><span>Wydano razem: <b class="'+(spent>num(f.start)?"neg":"")+'">'+fmt(spent)+'</b></span>'+
         '<span>Zostało: <b class="'+(left<0?"neg":"")+'">'+fmt(left)+'</b></span></div>';
@@ -525,10 +529,15 @@
       return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
     };
     var period=fD(from)+" – "+fD(to);
+    // liczba tygodni: dni w okresie / 7, zaokrąglone w górę
+    var days=Math.round((new Date(to+"T00:00:00")-new Date(from+"T00:00:00"))/86400000);
+    var nWeeks=Math.max(1,Math.min(9,Math.ceil(days/7)));
+    var weeks=[];
+    for(var i=0;i<nWeeks;i++)weeks.push({start:"",spent:""});
     var forms=lget(BKEY,[]);
     forms.push({
-      id:Date.now(),period:period,from:from,to:to,start:start,
-      weeks:[{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""},{start:"",spent:""}]
+      id:Date.now(),period:period,from:from,to:to,start:start,days:days,
+      weeks:weeks
     });
     lset(BKEY,forms);
     $("bud-start").value="";
