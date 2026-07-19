@@ -95,6 +95,23 @@
   .theme-opt.active{border-color:var(--accent);color:var(--ink)}
   .theme-dot{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.14)}
 
+  /* ---------- Cele: typ i roczne ---------- */
+  .gtype{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .gtype button{
+    padding:10px 6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;
+    transition:background-color .38s ease,border-color .38s ease,color .38s ease,transform .14s ease
+  }
+  .gtype button:active{transform:scale(.96)}
+  .gtype button.active{border-color:var(--accent);color:var(--ink)}
+  .goal-add{display:flex;gap:8px;margin-top:10px}
+  .goal-add input{padding:8px 10px;font-size:14px}
+  .goal-add button{
+    background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;
+    padding:0 14px;font-weight:700;font-size:13px;cursor:pointer;flex:none
+  }
+  .goal .g-reset{color:var(--faint)!important}
+
   /* ---------- Shared ---------- */
   header{padding-top:18px}
   .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
@@ -366,11 +383,19 @@
   </header>
   <form class="card" id="goal-new" autocomplete="off">
     <p class="form-title">Dodaj cel</p>
-    <div class="row">
+    <div class="gtype" id="gtype">
+      <button type="button" data-gtype="std" class="active">Zwykły</button>
+      <button type="button" data-gtype="rocz">Roczny</button>
+    </div>
+    <div class="row" style="margin-top:8px">
       <input id="goal-name" type="text" placeholder="np. Poduszka finansowa">
       <input id="goal-target" type="text" inputmode="decimal" placeholder="kwota" style="width:110px;flex:none">
     </div>
+    <div class="row" id="goal-months-row" style="margin-top:8px;display:none">
+      <input id="goal-months" type="text" inputmode="numeric" placeholder="liczba miesięcy (np. 12)">
+    </div>
     <button class="btn" type="submit">Zapisz cel</button>
+    <p class="hint" id="goal-hint">Postęp liczy się z aktualnego stanu oszczędności.</p>
     <p class="error" id="goal-error"></p>
   </form>
   <div id="goal-list"></div>
@@ -584,7 +609,7 @@
       $("home-chart-hint").textContent="Łączny kapitał (IKE + oszczędności) w czasie";
     }
 
-    var goals=lget(GKEY,[]);
+    var goals=lget(GKEY,[]).filter(function(g){return g.type!=="rocz"});
     $("home-goals").innerHTML=goals.length
       ? '<p class="goals-title">Cele</p>'+goals.map(function(g){return goalCard(g,false)}).join("")
       : "";
@@ -814,23 +839,48 @@
   }
 
   function goalCard(g,withDelete){
-    var have=oszTotal(),pct=g.target>0?have/g.target:0;
+    var rocz=g.type==="rocz";
+    var have=rocz?(g.saved||0):oszTotal();
+    var pct=g.target>0?have/g.target:0;
+    var extra="";
+    if(rocz){
+      var m=g.months||12;
+      var rata=Math.ceil(g.target/m);
+      var left=Math.max(0,g.target-have);
+      var mLeft=rata>0?Math.ceil(left/rata):0;
+      extra=' · ~'+fmt(rata)+'/mies. ('+m+' mies.'+(left>0&&mLeft<m?', zostało ~'+mLeft:'')+')';
+    }
     return '<div class="goal">'+
       '<div class="ring">'+goalRing(pct,64)+'</div>'+
       '<div class="g-info">'+
-        '<p class="g-name">'+g.name+'</p>'+
+        '<p class="g-name">'+g.name+(rocz?' <span style="font-size:11px;color:var(--faint);font-weight:600">· roczny</span>':'')+'</p>'+
         '<p class="g-nums">'+fmt(Math.min(have,g.target))+' / '+fmt(g.target)+
-          (pct>=1?' · osiągnięty!':' · brakuje '+fmt(Math.max(0,g.target-have))+goalETA(g.target,have))+'</p>'+
+          (pct>=1?' · osiągnięty!':' · brakuje '+fmt(Math.max(0,g.target-have))+(rocz?extra:goalETA(g.target,have)))+'</p>'+
+        (withDelete&&rocz?
+          '<div class="goal-add">'+
+            '<input type="text" inputmode="decimal" placeholder="kwota" data-gadd-in="'+g.id+'">'+
+            '<button type="button" data-gadd="'+g.id+'">Wpłać</button>'+
+          '</div>':'')+
       '</div>'+
-      (withDelete?'<button data-gdel="'+g.id+'">Usuń</button>':'')+
+      (withDelete?
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+
+          '<button data-gdel="'+g.id+'">Usuń</button>'+
+          (rocz&&(g.saved||0)>0?'<button class="g-reset" data-greset="'+g.id+'">Reset</button>':'')+
+        '</div>':'')+
       '</div>';
   }
 
   function renderCele(){
     var goals=lget(GKEY,[]);
     $("goal-error").textContent="";
+    var std=goals.filter(function(g){return g.type!=="rocz"});
+    var rocz=goals.filter(function(g){return g.type==="rocz"});
     var box=$("goal-list");
-    box.innerHTML=goals.map(function(g){return goalCard(g,true)}).join("")||
+    var html="";
+    if(std.length)html+=std.map(function(g){return goalCard(g,true)}).join("");
+    if(rocz.length)html+='<p class="goals-title">Cele roczne (składkowe)</p>'+
+      rocz.map(function(g){return goalCard(g,true)}).join("");
+    box.innerHTML=html||
       '<p class="hint" style="text-align:center;margin-top:20px">Brak celów — dodaj pierwszy powyżej.</p>';
     animateRings(box);
     Array.prototype.forEach.call(box.querySelectorAll("button[data-gdel]"),function(b){
@@ -840,7 +890,43 @@
         renderCele();
       };
     });
+    Array.prototype.forEach.call(box.querySelectorAll("button[data-gadd]"),function(b){
+      b.onclick=function(){
+        var inp=box.querySelector('input[data-gadd-in="'+b.getAttribute("data-gadd")+'"]');
+        var v=num(inp.value);
+        if(v===0)return;
+        var goals=lget(GKEY,[]);
+        var g=goals.filter(function(x){return String(x.id)===b.getAttribute("data-gadd")})[0];
+        if(!g)return;
+        g.saved=Math.max(0,(g.saved||0)+v);
+        lset(GKEY,goals);
+        renderCele();
+      };
+    });
+    Array.prototype.forEach.call(box.querySelectorAll("button[data-greset]"),function(b){
+      b.onclick=function(){
+        if(!confirmDel(b))return;
+        var goals=lget(GKEY,[]);
+        var g=goals.filter(function(x){return String(x.id)===b.getAttribute("data-greset")})[0];
+        if(g){g.saved=0;lset(GKEY,goals);renderCele()}
+      };
+    });
   }
+
+  var goalType="std";
+  Array.prototype.forEach.call(document.querySelectorAll("#gtype button"),function(b){
+    b.onclick=function(){
+      goalType=b.getAttribute("data-gtype");
+      Array.prototype.forEach.call(document.querySelectorAll("#gtype button"),function(x){
+        x.className=(x===b)?"active":"";
+      });
+      $("goal-name").placeholder=goalType==="rocz"?"np. Prezenty":"np. Poduszka finansowa";
+      $("goal-months-row").style.display=goalType==="rocz"?"flex":"none";
+      $("goal-hint").textContent=goalType==="rocz"
+        ?"Cel roczny ma własną pulę wpłat (składki np. na prezenty, ubezpieczenie). Nie pokazuje się na stronie głównej."
+        :"Postęp liczy się z aktualnego stanu oszczędności.";
+    };
+  });
 
   $("goal-new").onsubmit=function(ev){
     ev.preventDefault();
@@ -848,9 +934,16 @@
     if(!name){$("goal-error").textContent="Podaj nazwę celu.";return}
     if(target<=0){$("goal-error").textContent="Podaj kwotę docelową.";return}
     var goals=lget(GKEY,[]);
-    goals.push({id:Date.now(),name:name,target:target});
+    var g={id:Date.now(),name:name,target:target,type:goalType};
+    if(goalType==="rocz"){
+      g.saved=0;
+      var m=Math.round(num($("goal-months").value))||12;
+      if(m<1||m>120){$("goal-error").textContent="Liczba miesięcy: od 1 do 120.";return}
+      g.months=m;
+    }
+    goals.push(g);
     lset(GKEY,goals);
-    $("goal-name").value="";$("goal-target").value="";
+    $("goal-name").value="";$("goal-target").value="";$("goal-months").value="";
     renderCele();
   };
 
