@@ -135,6 +135,7 @@
   .error{color:var(--neg);font-size:13px;margin-top:8px}
   .row{display:flex;gap:8px}
   .form-title{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
+  .flabel{font-size:11px;color:var(--faint);margin-bottom:5px;letter-spacing:.03em}
 
   /* ---------- Charts ---------- */
   .chart-wrap{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px 6px}
@@ -298,6 +299,10 @@
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6"/></svg>
     Cele
   </button>
+  <button data-view="podz">
+    <svg viewBox="0 0 24 24"><path d="M12 3v6"/><path d="M12 9 5 15M12 9l7 6"/><path d="M5 15v5M19 15v5"/><path d="M3.5 20h3M17.5 20h3M10.5 20h3"/><path d="M12 20v-4"/></svg>
+    Przychód
+  </button>
   <button data-view="bud">
     <svg viewBox="0 0 24 24"><path d="M12 2.5v19"/><path d="M16.5 5.5H10a3.25 3.25 0 0 0 0 6.5h4a3.25 3.25 0 0 1 0 6.5H7.5"/></svg>
     Budżet tygodniowy
@@ -373,6 +378,90 @@
   </form>
 
   <div class="hist"><ul id="list"></ul></div>
+</div>
+
+<!-- ========== Podział wypłaty ========== -->
+<div class="view" id="view-podz">
+  <header>
+    <p class="eyebrow">Przychód</p>
+    <p class="sub">Policz orientacyjne netto z brutto, potem rozdziel je na przelewy.</p>
+  </header>
+
+  <div class="card" id="calc-card">
+    <p class="form-title">Kalkulator wypłaty (brutto → netto)</p>
+    <div class="row">
+      <div style="flex:1">
+        <p class="flabel">Podstawa brutto (zł/mies.)</p>
+        <input id="calc-brutto" type="text" inputmode="decimal" placeholder="np. 6400">
+      </div>
+      <div style="flex:1">
+        <p class="flabel">Stawka godzinowa (zł brutto)</p>
+        <input id="calc-stawka" type="text" inputmode="decimal" placeholder="np. 40">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:1">
+        <p class="flabel">Nadgodziny +50% (godz.)</p>
+        <input id="calc-h50" type="text" inputmode="decimal" placeholder="0">
+      </div>
+      <div style="flex:1">
+        <p class="flabel">Nadgodziny +100% (godz.)</p>
+        <input id="calc-h100" type="text" inputmode="decimal" placeholder="0">
+      </div>
+    </div>
+    <p class="flabel" style="margin-top:10px">Zwolnienie z PIT (ulga dla młodych, do 26 r.ż.)</p>
+    <div class="gtype">
+      <button type="button" data-pit="1" class="active">Zwolniony</button>
+      <button type="button" data-pit="0">Płacę PIT</button>
+    </div>
+    <p class="flabel" style="margin-top:10px">Premia w tym miesiącu (wpływa 20. dnia)</p>
+    <div class="row">
+      <div class="gtype" style="flex:1">
+        <button type="button" data-prem="0" class="active">Bez premii</button>
+        <button type="button" data-prem="1">Z premią</button>
+      </div>
+      <input id="calc-premia" type="text" inputmode="decimal" placeholder="brutto" style="width:100px;flex:none">
+    </div>
+    <button class="btn" type="button" id="calc-run">Oblicz netto</button>
+    <div id="calc-result" style="display:none"></div>
+    <p class="hint" style="margin-top:8px">Obliczenie orientacyjne dla umowy o pracę (składki ZUS 13,71%, zdrowotna 9%, KUP 250 zł, ulga 300 zł). Rzeczywista wypłata może się nieznacznie różnić.</p>
+  </div>
+
+  <form class="card" id="podz-form" autocomplete="off">
+    <p class="form-title">Wypłata netto</p>
+    <p class="hint" style="margin:0 0 8px">Wpisz kwotę, która wpłynęła na konto — poniżej pojawi się gotowa lista przelewów.</p>
+    <input id="podz-netto" type="text" inputmode="decimal" placeholder="np. 7200">
+    <button class="btn" type="submit">Podziel</button>
+    <p class="error" id="podz-error"></p>
+  </form>
+
+  <div class="card" id="podz-result" style="display:none"></div>
+
+  <div class="card">
+    <p class="form-title">Ustawienia podziału</p>
+    <p class="hint" style="margin:0 0 10px">Kwoty stałe schodzą z wypłaty najpierw. To, co zostanie (nadwyżka), dzieli się procentowo. Zmiany zapisują się automatycznie.</p>
+    <div class="row">
+      <div style="flex:1">
+        <p class="flabel">Wydatki stałe (zł)</p>
+        <input id="podz-stale" type="text" inputmode="decimal" placeholder="np. 1870">
+      </div>
+      <div style="flex:1">
+        <p class="flabel">Pula życiowa (zł)</p>
+        <input id="podz-zycie" type="text" inputmode="decimal" placeholder="np. 2400">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:1">
+        <p class="flabel">Oszczędności (% nadwyżki)</p>
+        <input id="podz-posz" type="text" inputmode="numeric" placeholder="np. 90">
+      </div>
+      <div style="flex:1">
+        <p class="flabel">IKE (% nadwyżki)</p>
+        <input id="podz-pike" type="text" inputmode="numeric" placeholder="np. 10">
+      </div>
+    </div>
+    <p class="hint" id="podz-cele-info" style="margin-top:10px"></p>
+  </div>
 </div>
 
 <!-- ========== Cele ========== -->
@@ -515,7 +604,7 @@
 
   /* ---------- Drawer / routing ---------- */
   var current="home";
-  var NAMES={home:"Strona główna",ike:"IKE",osz:"Oszczędności",cele:"Cele",bud:"Budżet tygodniowy",ust:"Ustawienia"};
+  var NAMES={home:"Strona główna",ike:"IKE",osz:"Oszczędności",cele:"Cele",podz:"Przychód",bud:"Budżet tygodniowy",ust:"Ustawienia"};
 
   function show(view,dir){
     current=view;
@@ -524,16 +613,18 @@
     });
     $("view-name").textContent=NAMES[view];
     // reset + wymuszony reflow, żeby animacja wejścia odpaliła się przy każdej zmianie
-    ["view-home","view-money","view-bud","view-cele","view-ust"].forEach(function(id){$(id).className="view"});
+    ["view-home","view-money","view-bud","view-cele","view-podz","view-ust"].forEach(function(id){$(id).className="view"});
     void document.body.offsetWidth;
     var extra=dir==="l"?" slide-l":(dir==="r"?" slide-r":"");
     $("view-home").className="view"+(view==="home"?" active"+extra:"");
     $("view-money").className="view"+((view==="ike"||view==="osz")?" active"+extra:"");
     $("view-bud").className="view"+(view==="bud"?" active"+extra:"");
     $("view-cele").className="view"+(view==="cele"?" active"+extra:"");
+    $("view-podz").className="view"+(view==="podz"?" active"+extra:"");
     $("view-ust").className="view"+(view==="ust"?" active"+extra:"");
     if(view==="bud")renderBud();
     else if(view==="cele")renderCele();
+    else if(view==="podz")renderPodz();
     else if(view==="home")renderHome();
     else if(view==="ust"){}
     else renderMoney();
@@ -947,6 +1038,171 @@
     renderCele();
   };
 
+  /* ---------- Kalkulator brutto → netto ---------- */
+  var CKEY="kap_income";
+  var calcPit=true,calcPrem=false;
+
+  function nettoZBrutto(brutto,pitFree){
+    // umowa o pracę: składki społeczne 13,71%, zdrowotna 9% od (brutto − społeczne),
+    // PIT 12% od (podstawa − KUP 250), minus ulga 300 zł — chyba że zwolnienie z PIT
+    var spol=Math.round(brutto*0.1371*100)/100;
+    var poSpol=brutto-spol;
+    var zdrow=Math.round(poSpol*0.09*100)/100;
+    var pit=0;
+    if(!pitFree){
+      var podstawa=Math.round(poSpol-250);
+      pit=Math.max(0,Math.round(podstawa*0.12-300));
+    }
+    return Math.round((brutto-spol-zdrow-pit)*100)/100;
+  }
+
+  function calcCfg(){return lget(CKEY,{brutto:6400,stawka:40,premia:1000,pit:true})}
+  function calcSave(){
+    lset(CKEY,{
+      brutto:num($("calc-brutto").value)||0,
+      stawka:num($("calc-stawka").value)||0,
+      premia:num($("calc-premia").value)||0,
+      pit:calcPit
+    });
+  }
+
+  function renderCalc(){
+    var c=calcCfg();
+    $("calc-brutto").value=c.brutto;
+    $("calc-stawka").value=c.stawka;
+    $("calc-premia").value=c.premia;
+    calcPit=c.pit!==false;
+    Array.prototype.forEach.call(document.querySelectorAll("#calc-card [data-pit]"),function(b){
+      b.className=(b.getAttribute("data-pit")==="1")===calcPit?"active":"";
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#calc-card [data-pit]"),function(b){
+    b.onclick=function(){
+      calcPit=b.getAttribute("data-pit")==="1";
+      Array.prototype.forEach.call(document.querySelectorAll("#calc-card [data-pit]"),function(x){
+        x.className=(x===b)?"active":"";
+      });
+      calcSave();
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("#calc-card [data-prem]"),function(b){
+    b.onclick=function(){
+      calcPrem=b.getAttribute("data-prem")==="1";
+      Array.prototype.forEach.call(document.querySelectorAll("#calc-card [data-prem]"),function(x){
+        x.className=(x===b)?"active":"";
+      });
+    };
+  });
+  ["calc-brutto","calc-stawka","calc-premia"].forEach(function(id){$(id).onchange=calcSave});
+
+  $("calc-run").onclick=function(){
+    calcSave();
+    var c=calcCfg();
+    var nadgodz=Math.round(((num($("calc-h50").value)||0)*c.stawka*1.5+(num($("calc-h100").value)||0)*c.stawka*2)*100)/100;
+    var bruttoBaza=c.brutto+nadgodz;
+    var nettoBaza=nettoZBrutto(bruttoBaza,calcPit);
+    var nettoPremii=0;
+    if(calcPrem&&c.premia>0){
+      nettoPremii=Math.round((nettoZBrutto(bruttoBaza+c.premia,calcPit)-nettoBaza)*100)/100;
+    }
+    var res=$("calc-result");
+    var rows=[["Brutto (podstawa + nadgodziny)",bruttoBaza]];
+    if(nadgodz>0)rows.push(["— w tym nadgodziny",nadgodz]);
+    rows.push(["Netto na konto (10. dnia)",nettoBaza]);
+    if(nettoPremii>0)rows.push(["Premia netto (20. dnia)",nettoPremii]);
+    res.innerHTML=rows.map(function(r,i){
+      var strong=r[0].indexOf("Netto")===0||r[0].indexOf("Premia")===0;
+      return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px">'+
+        '<span style="color:var(--dim)">'+r[0]+'</span>'+
+        '<b style="font-variant-numeric:tabular-nums'+(strong?';color:var(--accent)':'')+'">'+fmt2(r[1])+'</b></div>';
+    }).join("")+
+    '<button class="btn ghost" type="button" id="calc-use" style="margin-top:10px">Wstaw netto do podziału'+(nettoPremii>0?' (bez premii)':'')+'</button>';
+    res.style.display="block";
+    $("calc-use").onclick=function(){
+      $("podz-netto").value=nettoBaza;
+      $("podz-netto").scrollIntoView({behavior:"smooth",block:"center"});
+    };
+  };
+
+  /* ---------- Podział wypłaty ---------- */
+  var PKEY="kap_split";
+  function fmt2(n){return new Intl.NumberFormat("pl-PL",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+" zł"}
+  function podzCfg(){return lget(PKEY,{stale:1870,zycie:2400,posz:90,pike:10})}
+  function celeRaty(){
+    // suma miesięcznych składek aktywnych (nieosiągniętych) celów rocznych
+    return lget(GKEY,[]).filter(function(g){return g.type==="rocz"&&(g.saved||0)<g.target})
+      .reduce(function(s,g){return s+g.target/(g.months||12)},0);
+  }
+
+  function renderPodz(){
+    renderCalc();
+    var c=podzCfg();
+    $("podz-stale").value=c.stale;
+    $("podz-zycie").value=c.zycie;
+    $("podz-posz").value=c.posz;
+    $("podz-pike").value=c.pike;
+    $("podz-error").textContent="";
+    var raty=celeRaty();
+    $("podz-cele-info").textContent=raty>0
+      ?"Składki celów rocznych (auto z zakładki Cele): "+fmt2(raty)+"/mies."
+      :"Brak aktywnych celów rocznych — składka 0 zł.";
+  }
+
+  function podzSaveCfg(){
+    var c={
+      stale:num($("podz-stale").value)||0,
+      zycie:num($("podz-zycie").value)||0,
+      posz:Math.max(0,Math.round(num($("podz-posz").value))),
+      pike:Math.max(0,Math.round(num($("podz-pike").value)))
+    };
+    lset(PKEY,c);
+    return c;
+  }
+
+  ["podz-stale","podz-zycie","podz-posz","podz-pike"].forEach(function(id){
+    $(id).onchange=podzSaveCfg;
+  });
+
+  $("podz-form").onsubmit=function(ev){
+    ev.preventDefault();
+    $("podz-error").textContent="";
+    var res=$("podz-result");
+    var netto=num($("podz-netto").value);
+    if(netto<=0){$("podz-error").textContent="Podaj kwotę wypłaty netto.";res.style.display="none";return}
+    var c=podzSaveCfg();
+    if(c.posz+c.pike!==100){
+      $("podz-error").textContent="Procenty nadwyżki muszą sumować się do 100 (teraz: "+(c.posz+c.pike)+").";
+      res.style.display="none";return;
+    }
+    var raty=Math.round(celeRaty()*100)/100;
+    var kwotowe=c.stale+c.zycie+raty;
+    if(netto<kwotowe){
+      $("podz-error").textContent="Uwaga: wypłata ("+fmt2(netto)+") nie pokrywa pozycji stałych ("+fmt2(kwotowe)+"). Brakuje "+fmt2(kwotowe-netto)+".";
+      res.style.display="none";return;
+    }
+    var nadw=Math.round((netto-kwotowe)*100)/100;
+    var osz=Math.round(nadw*c.posz)/100;
+    var ike=Math.round((nadw-osz)*100)/100; // reszta do IKE — suma zawsze się zgadza
+    var rows=[
+      ["Wydatki stałe",c.stale],
+      ["Pula życiowa (konto miesięczne)",c.zycie]
+    ];
+    if(raty>0)rows.push(["Cele roczne (składki)",raty]);
+    rows.push(["Oszczędności ("+c.posz+"%)",osz]);
+    rows.push(["IKE ("+c.pike+"%)",ike]);
+    res.innerHTML='<p class="form-title">Przelewy do wykonania</p>'+
+      rows.map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px">'+
+          '<span style="color:var(--dim)">'+r[0]+'</span>'+
+          '<b style="font-variant-numeric:tabular-nums">'+fmt2(r[1])+'</b></div>';
+      }).join("")+
+      '<div style="display:flex;justify-content:space-between;padding:9px 0 0;font-size:14px">'+
+        '<span style="color:var(--faint)">Razem</span>'+
+        '<b style="font-variant-numeric:tabular-nums;color:var(--accent)">'+fmt2(c.stale+c.zycie+raty+osz+ike)+'</b></div>';
+    res.style.display="block";
+  };
+
   /* ---------- Budżet tygodniowy ---------- */
   var BKEY="kap_forms";
 
@@ -1271,7 +1527,7 @@
   })();
 
   /* ---------- Nawigacja gestem (swipe) ---------- */
-  var VIEW_ORDER=["home","ike","osz","cele","bud","ust"];
+  var VIEW_ORDER=["home","ike","osz","cele","podz","bud","ust"];
   var swX=null,swY=null,swOk=false;
   document.addEventListener("touchstart",function(e){
     swOk=false;
