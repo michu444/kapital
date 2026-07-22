@@ -12,20 +12,23 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("push", function (e) {
-  var d = { title: "Mój Kapitał", body: "Przypomnienie" };
+  var d = { title: "", body: "Przypomnienie" };
   if (e.data) {
     try { var j = e.data.json(); for (var k in j) d[k] = j[k]; }
     catch (err) { d.body = e.data.text(); }
   }
-  e.waitUntil(
-    self.registration.showNotification(d.title, {
-      body: d.body,
-      icon: "icon-180.png",
-      badge: "icon-180.png",
-      tag: d.tag || "kapital",
-      data: { url: d.url || "./" }
-    })
-  );
+  // iOS dokleja linię "from <nazwa apki>" i nie da się jej usunąć.
+  // Pokazuje za to tylko te pola, które faktycznie wypełnisz — więc
+  // pusty title albo pusty body daje układ dwuliniowy zamiast trzyliniowego.
+  var opts = {
+    icon: "icon-180.png",
+    badge: "icon-180.png",
+    tag: d.tag || "kapital",
+    data: { url: d.url || "./" }
+  };
+  if (d.body) opts.body = d.body;
+
+  e.waitUntil(self.registration.showNotification(d.title || "", opts));
 });
 
 self.addEventListener("notificationclick", function (e) {

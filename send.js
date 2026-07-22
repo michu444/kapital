@@ -1,6 +1,6 @@
 // Wysyła powiadomienie push. Uruchamiane przez GitHub Actions.
 // Sekrety: VAPID_PUBLIC, VAPID_PRIVATE, SUBSCRIPTION
-// Zmienne: BODY, TAG, TARGET_HOUR (godzina w czasie polskim)
+// Zmienne: TITLE, BODY, TAG, TARGET_HOUR (godzina w czasie polskim)
 const webpush = require("web-push");
 
 const { VAPID_PUBLIC, VAPID_PRIVATE, SUBSCRIPTION, TARGET_HOUR } = process.env;
@@ -30,11 +30,13 @@ if (TARGET_HOUR) {
 }
 
 // mailto: musi być prawdziwy — Apple odrzuca nieprawidłowy subject
-webpush.setVapidDetails("mailto:mw0410wm@gmail.com", VAPID_PUBLIC, VAPID_PRIVATE);
+webpush.setVapidDetails("mailto:twoj@email.pl", VAPID_PUBLIC, VAPID_PRIVATE);
 
+// ?? zamiast || — pusty TITLE ma zostać pusty (wariant A: bez linii tytułu).
+// Przy || pusty ciąg jest "fałszywy" i wracałaby wartość domyślna.
 const payload = JSON.stringify({
-  title: process.env.TITLE || "Mój Kapitał",
-  body: process.env.BODY || "Przypomnienie",
+  title: process.env.TITLE ?? "Mój Kapitał",
+  body: process.env.BODY ?? "Przypomnienie",
   tag: process.env.TAG || "kapital",
   url: "./"
 });
