@@ -30,7 +30,7 @@ if (TARGET_HOUR) {
 }
 
 // mailto: musi być prawdziwy — Apple odrzuca nieprawidłowy subject
-webpush.setVapidDetails("mailto:twoj@email.pl", VAPID_PUBLIC, VAPID_PRIVATE);
+webpush.setVapidDetails("mailto:mw0410wm@gmail.com", VAPID_PUBLIC, VAPID_PRIVATE);
 
 const payload = JSON.stringify({
   title: process.env.TITLE || "Mój Kapitał",
