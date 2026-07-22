@@ -596,6 +596,7 @@
     <p class="hint" id="push-msg">Wymaga dodania aplikacji do ekranu głównego. Po włączeniu skopiuj subskrypcję i wklej ją do sekretu <b>SUBSCRIPTION</b> w repozytorium GitHub.</p>
     <textarea id="push-json" readonly style="display:none;width:100%;height:110px;margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px;font-size:11px;font-family:ui-monospace,monospace"></textarea>
     <button type="button" class="btn ghost" id="push-copy" style="display:none">Kopiuj subskrypcję</button>
+    <button type="button" class="btn ghost" id="push-done" style="display:none">Wklejone na GitHuba</button>
   </div>
 </div>
 
@@ -1681,12 +1682,50 @@
     return out;
   }
   function pushMsg(t,ok){var m=$("push-msg");m.textContent=t;m.style.color=ok?"#7fe08f":""}
+
+  // Pokazuje JSON do skopiowania tylko wtedy, gdy subskrypcja różni się od tej,
+  // którą już wkleiłeś na GitHuba (zapamiętanej w localStorage).
+  function pushShow(sub){
+    var json=JSON.stringify(sub.toJSON?sub.toJSON():sub);
+    var saved=localStorage.getItem("kap_push_sent");
+    if(saved===json){
+      pushMsg("Powiadomienia aktywne. Ta sama subskrypcja, którą masz na GitHubie — nic nie musisz robić.",true);
+      $("push-json").style.display="none";
+      $("push-copy").style.display="none";
+      $("push-done").style.display="none";
+      $("push-sub").textContent="Powiadomienia włączone";
+      return;
+    }
+    $("push-json").value=json;
+    $("push-json").style.display="block";
+    $("push-copy").style.display="block";
+    $("push-done").style.display="block";
+    $("push-sub").textContent="Odśwież subskrypcję";
+    pushMsg(saved?"Subskrypcja się zmieniła — skopiuj nową i podmień sekret SUBSCRIPTION.":
+                  "Skopiuj subskrypcję i wklej do sekretu SUBSCRIPTION.");
+  }
+
+  // sprawdzenie stanu przy starcie — bez proszenia o zgodę
+  function pushCheck(){
+    if(!("serviceWorker" in navigator)||!("PushManager" in window))return;
+    navigator.serviceWorker.ready.then(function(reg){
+      return reg.pushManager.getSubscription();
+    }).then(function(sub){
+      if(sub)pushShow(sub);
+    }).catch(function(){});
+  }
+  pushCheck();
+
+  $("push-done").onclick=function(){
+    localStorage.setItem("kap_push_sent",$("push-json").value);
+    pushShow(JSON.parse($("push-json").value));
+  };
   $("push-copy").onclick=function(){
     var ta=$("push-json");
     ta.select();ta.setSelectionRange(0,99999);
     if(navigator.clipboard)navigator.clipboard.writeText(ta.value);
     else document.execCommand("copy");
-    pushMsg("Skopiowano. Wklej do sekretu SUBSCRIPTION na GitHubie.",true);
+    pushMsg("Skopiowano. Wklej do sekretu SUBSCRIPTION, potem kliknij „Wklejone”.",true);
   };
   $("push-sub").onclick=function(){
     if(!VAPID_PUBLIC){pushMsg("Brak klucza VAPID — uzupełnij VAPID_PUBLIC w index.html.");return}
@@ -1710,11 +1749,7 @@
           });
         });
       }).then(function(sub){
-        var ta=$("push-json");
-        ta.value=JSON.stringify(sub.toJSON?sub.toJSON():sub);
-        ta.style.display="block";
-        $("push-copy").style.display="block";
-        pushMsg("Gotowe. Skopiuj subskrypcję poniżej i wklej do sekretu SUBSCRIPTION.",true);
+        pushShow(sub);
       });
     }).catch(function(e){
       pushMsg("Nie udało się: "+(e&&e.message?e.message:"błąd subskrypcji"));
