@@ -1,0 +1,28 @@
+# Plik w repo: .github/workflows/wydatki-dzienne.yml
+# Codziennie o 20:00 czasu polskiego
+name: Wydatki dzienne
+
+on:
+  schedule:
+    # Dwa wpisy: 18 UTC trafia latem (CEST), 19 UTC zimą (CET).
+    # send.js sprawdza realną godzinę w Polsce, więc wysyła tylko jeden z nich.
+    - cron: "0 18,19 * * *"
+  workflow_dispatch:
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install web-push
+      - run: node send.js
+        env:
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          SUBSCRIPTION: ${{ secrets.SUBSCRIPTION }}
+          TARGET_HOUR: "20"
+          BODY: "Uzupełnij swoje wydatki"
+          TAG: "wydatki"
