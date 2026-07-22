@@ -1,0 +1,27 @@
+# Plik w repo: .github/workflows/budzet-miesieczny.yml
+# 10. dnia każdego miesiąca o 18:00 czasu polskiego
+name: Budżet miesięczny
+
+on:
+  schedule:
+    # 16 UTC latem (CEST), 17 UTC zimą (CET) — send.js wybiera właściwy
+    - cron: "0 16,17 10 * *"
+  workflow_dispatch:
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install web-push
+      - run: node send.js
+        env:
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          SUBSCRIPTION: ${{ secrets.SUBSCRIPTION }}
+          TARGET_HOUR: "18"
+          BODY: "Zaplanuj swój budżet miesięczny"
+          TAG: "miesiac"
