@@ -140,6 +140,22 @@
   /* ---------- Charts ---------- */
   .chart-wrap{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px 6px}
   svg{display:block;width:100%;height:210px;touch-action:none}
+
+  /* ---------- Wykres kołowy podziału wypłaty ---------- */
+  .pie-wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+  .pie-circle{width:190px;height:190px;border-radius:50%;flex:none;position:relative;box-shadow:0 0 0 1px var(--line) inset}
+  .pie-center{
+    position:absolute;inset:22%;border-radius:50%;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  }
+  .pie-center b{font-size:15px;font-variant-numeric:tabular-nums}
+  .pie-center span{font-size:10px;color:var(--dim);margin-top:2px}
+  .pie-legend{width:100%;display:flex;flex-direction:column;gap:9px}
+  .pie-row{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+  .pie-row .pie-label{display:flex;align-items:center;gap:9px;color:var(--dim)}
+  .pdot{width:11px;height:11px;border-radius:50%;flex:none}
+  .pie-row b{font-variant-numeric:tabular-nums;color:var(--ink)}
+  .pie-pct{color:var(--faint);font-size:11.5px;margin-left:6px}
   .chart-readout{
     text-align:center;font-size:13px;font-weight:600;color:var(--ink);
     background:var(--bg);border:1px solid var(--line);border-radius:8px;
@@ -437,6 +453,8 @@
 
   <div class="card" id="podz-result" style="display:none"></div>
 
+  <div class="card" id="podz-piechart" style="display:none"></div>
+
   <div class="card">
     <p class="form-title">Ustawienia podziału</p>
     <p class="hint" style="margin:0 0 10px">Kwoty stałe schodzą z wypłaty najpierw. To, co zostanie (nadwyżka), dzieli się procentowo. Zmiany zapisują się automatycznie.</p>
@@ -565,6 +583,7 @@
     ziel:{name:"Zielony",vars:{"--bg":"#07200e","--card":"#0d3018","--line":"#1e5632","--ink":"#eafff1","--dim":"#8fe8ad","--faint":"#4a9664","--accent":"#4fe08a","--bg2":"#061a0b","--bg3":"#031006","--glow":"79,224,138","--accent-ink":"#061a0b","--scheme":"dark"}},
     czer:{name:"Czerwony",vars:{"--bg":"#260808","--card":"#380f0f","--line":"#5c2020","--ink":"#ffecec","--dim":"#eb9494","--faint":"#a05252","--accent":"#ff6b6b","--bg2":"#1f0606","--bg3":"#150404","--glow":"255,107,107","--accent-ink":"#1f0606","--scheme":"dark"}},
     fiol:{name:"Fioletowy",vars:{"--bg":"#170829","--card":"#231039","--line":"#3f2260","--ink":"#f5ecff","--dim":"#c79bef","--faint":"#7d55a3","--accent":"#b878ff","--bg2":"#120621","--bg3":"#0a0314","--glow":"184,120,255","--accent-ink":"#120621","--scheme":"dark"}},
+    oliw:{name:"Oliwkowy",vars:{"--bg":"#1c1a12","--card":"#292518","--line":"#4a4430","--ink":"#f5ecd8","--dim":"#c9bfa0","--faint":"#7d765c","--accent":"#c2a572","--bg2":"#161409","--bg3":"#0e0c06","--glow":"194,165,114","--accent-ink":"#1c1a12","--scheme":"dark"}},
     czar:{name:"Czarny",dot:"#0a0a0a",dotBorder:"#ffffff",vars:{"--bg":"#0a0a0a","--card":"#161616","--line":"#333333","--ink":"#ffffff","--dim":"#c9c9c9","--faint":"#828282","--accent":"#ffffff","--bg2":"#0d0d0d","--bg3":"#050505","--glow":"255,255,255","--accent-ink":"#111111","--scheme":"dark"}},
     bialy:{name:"Biały",dot:"#ffffff",dotBorder:"#111111",vars:{"--bg":"#f4f4f4","--card":"#ffffff","--line":"#d8d8d8","--ink":"#111111","--dim":"#3d3d3d","--faint":"#8a8a8a","--accent":"#111111","--bg2":"#fafafa","--bg3":"#e9e9e9","--glow":"17,17,17","--accent-ink":"#ffffff","--scheme":"light"}}
   };
@@ -1143,6 +1162,8 @@
     $("podz-posz").value=c.posz;
     $("podz-pike").value=c.pike;
     $("podz-error").textContent="";
+    $("podz-result").style.display="none";
+    $("podz-piechart").style.display="none";
     var raty=celeRaty();
     $("podz-cele-info").textContent=raty>0
       ?"Składki celów rocznych (auto z zakładki Cele): "+fmt2(raty)+"/mies."
@@ -1163,6 +1184,35 @@
   ["podz-stale","podz-zycie","podz-posz","podz-pike"].forEach(function(id){
     $(id).onchange=podzSaveCfg;
   });
+
+  var PIE_COLORS={zycie:"#5fd4ff",stale:"#ff7d6b",osz:"#7fe08f",ike:"#b878ff",cele:"#ffc93c"};
+  var PIE_LABELS={zycie:"Pula życiowa",stale:"Wydatki stałe",osz:"Oszczędności",ike:"IKE",cele:"Cele roczne"};
+
+  function podzPieHTML(parts,total){
+    // parts: [[key,kwota], ...] w kolejności rysowania
+    var acc=0,stops=[];
+    parts.forEach(function(p){
+      var pct=total>0?(p[1]/total*100):0;
+      var from=acc,to=acc+pct;
+      stops.push(PIE_COLORS[p[0]]+" "+from.toFixed(2)+"% "+to.toFixed(2)+"%");
+      acc=to;
+    });
+    var grad="conic-gradient("+stops.join(",")+")";
+    var legend=parts.map(function(p){
+      var pct=total>0?Math.round(p[1]/total*1000)/10:0;
+      return '<div class="pie-row">'+
+        '<span class="pie-label"><span class="pdot" style="background:'+PIE_COLORS[p[0]]+'"></span>'+PIE_LABELS[p[0]]+'</span>'+
+        '<span><b>'+fmt2(p[1])+'</b><span class="pie-pct">'+pct+'%</span></span>'+
+      '</div>';
+    }).join("");
+    return '<p class="form-title">Podział wypłaty — udział procentowy</p>'+
+      '<div class="pie-wrap">'+
+        '<div class="pie-circle" style="background:'+grad+'">'+
+          '<div class="pie-center"><b>'+fmt2(total)+'</b><span>razem</span></div>'+
+        '</div>'+
+        '<div class="pie-legend">'+legend+'</div>'+
+      '</div>';
+  }
 
   $("podz-form").onsubmit=function(ev){
     ev.preventDefault();
@@ -1201,6 +1251,14 @@
         '<span style="color:var(--faint)">Razem</span>'+
         '<b style="font-variant-numeric:tabular-nums;color:var(--accent)">'+fmt2(c.stale+c.zycie+raty+osz+ike)+'</b></div>';
     res.style.display="block";
+
+    var total=c.stale+c.zycie+raty+osz+ike;
+    var pieParts=[["zycie",c.zycie],["stale",c.stale]];
+    if(raty>0)pieParts.push(["cele",raty]);
+    pieParts.push(["osz",osz],["ike",ike]);
+    var pie=$("podz-piechart");
+    pie.innerHTML=podzPieHTML(pieParts,total);
+    pie.style.display="block";
   };
 
   /* ---------- Budżet tygodniowy ---------- */
