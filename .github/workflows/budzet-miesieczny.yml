@@ -22,6 +22,6 @@ jobs:
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           SUBSCRIPTION: ${{ secrets.SUBSCRIPTION }}
-          TARGET_HOUR: "22"
+          TARGET_HOUR: "18"
           BODY: "Zaplanuj swój budżet miesięczny"
           TAG: "miesiac"
