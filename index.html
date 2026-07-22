@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Kapitał">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-180.png">
 <meta name="theme-color" content="#0a0a0a">
 <style>
@@ -588,6 +589,14 @@
     <button type="button" class="btn ghost" id="bio-toggle">Włącz Face ID</button>
     <p class="hint">Zmiana PIN-u wymaga ustawienia nowego kodu. Face ID działa tylko po zainstalowaniu aplikacji na ekranie głównym (HTTPS).</p>
   </div>
+
+  <div class="card">
+    <p class="form-title">Powiadomienia</p>
+    <button type="button" class="btn ghost" id="push-sub" style="margin-top:0">Włącz powiadomienia</button>
+    <p class="hint" id="push-msg">Wymaga dodania aplikacji do ekranu głównego. Po włączeniu skopiuj subskrypcję i wklej ją do sekretu <b>SUBSCRIPTION</b> w repozytorium GitHub.</p>
+    <textarea id="push-json" readonly style="display:none;width:100%;height:110px;margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px;font-size:11px;font-family:ui-monospace,monospace"></textarea>
+    <button type="button" class="btn ghost" id="push-copy" style="display:none">Kopiuj subskrypcję</button>
+  </div>
 </div>
 
 <!-- ========== Budżet tygodniowy ========== -->
@@ -778,10 +787,15 @@
       $("home-chart-hint").textContent="Łączny kapitał (IKE + oszczędności) w czasie";
     }
 
-    var goals=lget(GKEY,[]).filter(function(g){return g.type!=="rocz"});
-    $("home-goals").innerHTML=goals.length
-      ? '<p class="goals-title">Cele</p>'+goals.map(function(g){return goalCard(g,false)}).join("")
-      : "";
+    var goals=lget(GKEY,[]);
+    var std=goals.filter(function(g){return g.type!=="rocz"});
+    var rcz=goals.filter(function(g){return g.type==="rocz"});
+    var gh="";
+    if(std.length)gh+='<p class="goals-title">Cele</p>'+
+      std.map(function(g){return goalCard(g,false)}).join("");
+    if(rcz.length)gh+='<p class="goals-title">Cele roczne (składkowe)</p>'+
+      rcz.map(function(g){return goalCard(g,false)}).join("");
+    $("home-goals").innerHTML=gh;
     animateRings($("home-goals"));
   }
 
@@ -1092,7 +1106,7 @@
       $("goal-name").placeholder=goalType==="rocz"?"np. Prezenty":"np. Poduszka finansowa";
       $("goal-months-row").style.display=goalType==="rocz"?"flex":"none";
       $("goal-hint").textContent=goalType==="rocz"
-        ?"Cel roczny ma własną pulę wpłat (składki np. na prezenty, ubezpieczenie). Nie pokazuje się na stronie głównej."
+        ?"Cel roczny ma własną pulę wpłat (składki np. na prezenty, ubezpieczenie). Wpłaty dodajesz tutaj."
         :"Postęp liczy się z aktualnego stanu oszczędności.";
     };
   });
@@ -1651,6 +1665,61 @@
     $("bud-to").value=iso(to);
   }
   prefillDates();
+
+  /* ---------- Powiadomienia push ---------- */
+  // Wklej tu publiczny klucz VAPID (ten sam, którym podpisuje GitHub Actions)
+  var VAPID_PUBLIC="BIr8GnAdZulsFlS4eCuxmlN1xk44oHYgtNTbm5pvhewcJ2NLwdS0u0Jzzl3KULZ86RYpfDW68JeQ8LmwrJoZ9ho";
+
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  }
+  function b64ToU8(s){
+    var pad=new Array((4-s.length%4)%4+1).join("=");
+    var b=(s+pad).replace(/-/g,"+").replace(/_/g,"/");
+    var raw=atob(b),out=new Uint8Array(raw.length);
+    for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+    return out;
+  }
+  function pushMsg(t,ok){var m=$("push-msg");m.textContent=t;m.style.color=ok?"#7fe08f":""}
+  $("push-copy").onclick=function(){
+    var ta=$("push-json");
+    ta.select();ta.setSelectionRange(0,99999);
+    if(navigator.clipboard)navigator.clipboard.writeText(ta.value);
+    else document.execCommand("copy");
+    pushMsg("Skopiowano. Wklej do sekretu SUBSCRIPTION na GitHubie.",true);
+  };
+  $("push-sub").onclick=function(){
+    if(!VAPID_PUBLIC){pushMsg("Brak klucza VAPID — uzupełnij VAPID_PUBLIC w index.html.");return}
+    if(!("serviceWorker" in navigator)||!("PushManager" in window)){
+      pushMsg("Ta przeglądarka nie obsługuje powiadomień push.");return;
+    }
+    var standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+    if(!standalone){
+      pushMsg("Na iOS powiadomienia działają dopiero po dodaniu apki do ekranu głównego. Otwórz ją stamtąd i spróbuj ponownie.");
+      return;
+    }
+    // zgoda MUSI wyjść z gestu użytkownika — stąd wywołanie prosto z onclick
+    Notification.requestPermission().then(function(p){
+      if(p!=="granted"){pushMsg("Odmówiono zgody na powiadomienia.");return}
+      return navigator.serviceWorker.ready.then(function(reg){
+        return reg.pushManager.getSubscription().then(function(ex){
+          if(ex)return ex;
+          return reg.pushManager.subscribe({
+            userVisibleOnly:true,
+            applicationServerKey:b64ToU8(VAPID_PUBLIC)
+          });
+        });
+      }).then(function(sub){
+        var ta=$("push-json");
+        ta.value=JSON.stringify(sub.toJSON?sub.toJSON():sub);
+        ta.style.display="block";
+        $("push-copy").style.display="block";
+        pushMsg("Gotowe. Skopiuj subskrypcję poniżej i wklej do sekretu SUBSCRIPTION.",true);
+      });
+    }).catch(function(e){
+      pushMsg("Nie udało się: "+(e&&e.message?e.message:"błąd subskrypcji"));
+    });
+  };
 
   /* ---------- Blokada PIN ---------- */
   function pinHash(s){
